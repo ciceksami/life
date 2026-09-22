@@ -1,9 +1,10 @@
-# Avataria  PVP TR - V2
-Avataria PVP, kendi avataria sunucunuzu kurmanızı sağlar.
+# Avatar Life Sami Can Çavuş / SON SÜRÜM 2026 TR 
+Avatar Life, kendi avataria sunucunuzu kurmanızı sağlar.
 
-# Güncellemeler 08.08.2020 
+# Güncellemeler 22.09.2026
 - Chat Dekor Özelliği eklendi.
 - Hatalar giderildi.
+- Meslek Kıyafet Hataları ( Baston Foto Makinesi vs. Hatası ) Fixlendi.
 
 # VDS - VPS Üzerine Kurulum
 - apt-get update
@@ -11,7 +12,7 @@ Avataria PVP, kendi avataria sunucunuzu kurmanızı sağlar.
 - apt install python3-pip
 - apt-get install redis-server
 - systemctl enable redis-server.service
-- git clone https://github.com/emirkibar/avatariapvp-tr
+- git clone https://github.com/ciceksami/life
 - "avatariapvp-tr" dosyasının içindeki "web.ini" yi kendi sunucunuza göre güncelleyin.
 - pip3 install --user -r requirements.txt  oyun gereksimilerini indirin.
 - Uzak Masaüstü Bağlantısından makinanızda terminal açıp "cd avatariapvp-tr" yazıp python3 web.py yazın.
