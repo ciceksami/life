@@ -147,20 +147,45 @@ class Inventory():
         if not category:
             logging.error("Category not found")
             return
+
         weared = self.server.redis.smembers(f"uid:{self.uid}:wearing")
         for weared_cloth in weared:
-            if self._has_conflict(weared_cloth, category, gender):
+            if self._has_conflict(weared_cloth, cloth, category, gender):
                 self.change_wearing(weared_cloth, False)
 
-    def _has_conflict(self, cloth, category, gender):
+    def _has_conflict(self, worn_cloth, new_cloth, category, gender):
         get_category = self.server.modules["a"].get_category
-        cloth_category = get_category(cloth, gender)
+
+        worn_base = worn_cloth.split("_", 1)[0]
+        new_base = new_cloth.split("_", 1)[0]
+        cloth_category = get_category(worn_base, gender)
+
+        # Kaydet paketlerinden tespit edilen gercek esya ID'leri.
+        profession_slots = {
+            # Erkek
+            "hlwn2015BStck": "rightHand",
+            "boyCBgPrfVsg": "leftHand",
+            "boyCmrPrfPhr": "body",
+
+            # Kiz
+            "grlAprChrStc": "leftHand",
+            "grlCBgPrfVsg": "leftHand",
+            "grlCmrPrfPhr": "body",
+        }
+
+        if worn_base in profession_slots and new_base in profession_slots:
+            # Farkli slotlar birlikte kullanilir.
+            # Ayni slotta yeni esya eskisini cikarir.
+            return profession_slots[worn_base] == profession_slots[new_base]
+
         if cloth_category == category:
             return True
+
         for conflict in self.server.conflicts:
             if (conflict[0] == category and
                 conflict[1] == cloth_category) or \
                (conflict[1] == category and
-               conflict[0] == cloth_category):
+                conflict[0] == cloth_category):
                 return True
+
         return False

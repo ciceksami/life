@@ -1,0 +1,49 @@
+AVATAR LIFE QUEST SYSTEM v1.1 — PURCHASE HOOK FIX
+=================================================
+
+v1'de purchase event yalnızca shop.py / buy_joke_item üzerinden ilerliyordu.
+Gerçek mağaza satın almaları farklı modüllerden geçtiği için görev ilerlemiyordu.
+
+v1.1 bağlantıları:
+- avatar.py / buy_cloth              -> purchase +1
+- avatar.py / buy_clothes_suit       -> purchase +1
+- avatar.py / buy_colored_clothes    -> purchase +1
+- furniture.py / buy                 -> purchase +1
+- shop.py / buy_joke_item            -> purchase +1
+
+Hook yalnızca başarılı satın alma ve envantere ekleme işleminden sonra çalışır.
+Yetersiz bakiye / geçersiz ürün işlemleri görev ilerletmez.
+Bir suit veya renkli kıyafet işleminde birden fazla item eklenebilse de satın alma
+tek işlem olarak +1 sayılır.
+
+Kurulum:
+cd ~/avatariapvp
+cp -a modules modules_backup_before_quest_v1_1
+
+ZIP'teki:
+avatar.py
+furniture.py
+shop.py
+quest_system.py
+economy.py
+billing.py
+relations.py
+
+dosyalarını modules/ içine kopyala.
+
+Kontrol:
+python3 -m py_compile modules/{avatar,furniture,shop,quest_system,economy,billing,relations}.py
+python3 -m compileall -q modules
+
+server.py içindeki "quest_system" kaydını KORU; v1.1 server.py'yi değiştirmez.
+
+Test:
+1) server restart
+2) UID 1 ile kıyafet veya mobilya satın al
+3) redis-cli --scan --pattern 'uid:1:quest:*'
+4) for k in $(redis-cli --scan --pattern 'uid:1:quest:*'); do echo "$k = $(redis-cli GET "$k")"; done
+
+Beklenen:
+starter_first_purchase progress = 1
+daily_shopping progress = 1
+weekly_shopper progress = 1

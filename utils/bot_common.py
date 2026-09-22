@@ -7,6 +7,7 @@ def random_string(string_length=20):
     return ''.join(random.choice(letters) for i in range(string_length))
 
 
+
 def new_account(redis):
     redis.incr("uids")
     uid = redis.get("uids")
@@ -18,9 +19,9 @@ def new_account(redis):
     pipe = redis.pipeline()
     pipe.set(f"auth:{passwd}", uid)
     pipe.set(f"uid:{uid}:slvr", 10000)
-    pipe.set(f"uid:{uid}:gld", 100)
+    pipe.set(f"uid:{uid}:gld", 25000)
     pipe.set(f"uid:{uid}:enrg", 500)
-    pipe.set(f"uid:{uid}:exp", 815000)
+    pipe.set(f"uid:{uid}:exp", 39000)
     pipe.set(f"uid:{uid}:emd", 0)
     pipe.set(f"uid:{uid}:lvt", 0)
     pipe.sadd(f"uid:{uid}:items", "blackMobileSkin")

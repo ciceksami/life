@@ -1,0 +1,947 @@
+import asyncio
+import base64
+import configparser
+import hashlib
+import html
+import re
+import secrets
+
+import redis
+from aiohttp import web
+import aiohttp_session
+import aiohttp_jinja2
+import jinja2
+from cryptography import fernet
+from aiohttp_session.cookie_storage import EncryptedCookieStorage
+
+import utils.bot_common
+
+
+routes = web.RouteTableDef()
+routes.static("/files", "files")
+
+CROSSDOMAIN_XML = """<?xml version="1.0" ?>
+<cross-domain-policy>
+    <allow-access-from domain="*" />
+</cross-domain-policy>"""
+
+config = configparser.ConfigParser()
+config.read("web.ini")
+
+REGISTRATION_ENABLED = (
+    config["webserver"].get("allow_reg", "false").lower() == "true"
+)
+
+EMAIL_RE = re.compile(r"^[^@\s]+@[^@\s]+\.[^@\s]+$")
+CAPTCHA_RE = re.compile(r"^[0-9]{6}$")
+
+# Gizli yonetim paneli
+PANEL_PATH = "/panel-RJ6UTLJ-qD"
+PANEL_PASSWORD = "RJ6UTLJ-qDXhsPIJkKB4o8Kx"
+PANEL_FIELDS = ("gld", "slvr", "exp", "enrg", "crt", "hrt", "role")
+
+# Ayrı moderatör paneli
+MOD_PATH = "/moderator-X7K9-ops"
+MOD_LOG_KEY = "moderation:logs"
+
+
+
+def panel_authorized(session):
+    return session.get("panel_admin") is True
+
+def moderator_authorized(session):
+    try:
+        return int(session.get("moderator_role", 0)) in (2, 4)
+    except (TypeError, ValueError):
+        return False
+
+def moderator_can(session, action):
+    try:
+        role = int(session.get("moderator_role", 0))
+    except (TypeError, ValueError):
+        return False
+    if role == 2:
+        return action in ("mute", "unmute", "warn")
+    if role == 4:
+        return action in ("mute", "unmute", "warn", "ban", "unban")
+    return False
+
+
+def moderation_log(action, uid, detail=""):
+    import json, time
+    entry = {
+        "ts": int(time.time()),
+        "action": action,
+        "uid": str(uid),
+        "detail": str(detail)[:500]
+    }
+    app["redis"].lpush(MOD_LOG_KEY, json.dumps(entry, ensure_ascii=False))
+    app["redis"].ltrim(MOD_LOG_KEY, 0, 199)
+
+
+def player_exists(uid):
+    return bool(
+        app["redis"].exists("uid:{}:gld".format(uid))
+        or app["redis"].exists("uid:{}:exp".format(uid))
+        or app["redis"].exists("uid:{}:email".format(uid))
+        or app["redis"].exists("uid:{}:appearance".format(uid))
+    )
+
+
+def exp_for_level(level):
+    """get_level() fonksiyonunda tam olarak bu seviyeyi gosteren minimum EXP."""
+    if level < 1:
+        raise ValueError("Seviye en az 1 olmali.")
+    return 25 * (level - 1) * level
+
+
+def hash_password(password):
+    iterations = 120000
+    salt = secrets.token_bytes(16)
+    digest = hashlib.pbkdf2_hmac(
+        "sha256",
+        password.encode("utf-8"),
+        salt,
+        iterations
+    )
+    return "pbkdf2_sha256${}${}${}".format(
+        iterations,
+        salt.hex(),
+        digest.hex()
+    )
+
+
+def verify_password(password, encoded):
+    try:
+        algorithm, iterations, salt_hex, digest_hex = encoded.split("$", 3)
+        if algorithm != "pbkdf2_sha256":
+            return False
+
+        actual = hashlib.pbkdf2_hmac(
+            "sha256",
+            password.encode("utf-8"),
+            bytes.fromhex(salt_hex),
+            int(iterations)
+        )
+        expected = bytes.fromhex(digest_hex)
+        return secrets.compare_digest(actual, expected)
+    except (ValueError, TypeError):
+        return False
+
+
+def normalize_email(value):
+    return (value or "").strip().lower()
+
+
+def json_result(message, status=200, ok=False, refresh_captcha=None):
+    payload = {
+        "ok": ok,
+        "message": message
+    }
+    if refresh_captcha is not None:
+        payload["refresh_captcha"] = refresh_captcha
+    return web.json_response(payload, status=status)
+
+
+def find_game_token(uid):
+    uid = str(uid)
+    for key in app["redis"].scan_iter(match="auth:*", count=100):
+        if app["redis"].get(key) == uid:
+            return key[5:]
+    return None
+
+
+def new_captcha():
+    return str(secrets.randbelow(900000) + 100000)
+
+
+def make_captcha_svg(code):
+    safe_code = html.escape(code)
+    positions = [24, 64, 104, 144, 184, 224]
+    chars = []
+
+    for i, ch in enumerate(safe_code):
+        angle = secrets.choice(range(-11, 12))
+        y = secrets.choice(range(40, 51))
+        chars.append(
+            '<text x="{0}" y="{1}" transform="rotate({2} {0} {1})">{3}</text>'
+            .format(positions[i], y, angle, ch)
+        )
+
+    lines = []
+    for _ in range(8):
+        x1 = secrets.choice(range(4, 246))
+        y1 = secrets.choice(range(7, 58))
+        x2 = secrets.choice(range(4, 246))
+        y2 = secrets.choice(range(7, 58))
+        lines.append(
+            '<line x1="{}" y1="{}" x2="{}" y2="{}"/>'
+            .format(x1, y1, x2, y2)
+        )
+
+    dots = []
+    for _ in range(20):
+        cx = secrets.choice(range(5, 246))
+        cy = secrets.choice(range(5, 60))
+        r = secrets.choice([1, 1, 1, 2])
+        dots.append('<circle cx="{}" cy="{}" r="{}"/>'.format(cx, cy, r))
+
+    return """<svg xmlns="http://www.w3.org/2000/svg" width="250" height="64" viewBox="0 0 250 64">
+      <defs>
+        <linearGradient id="bg" x1="0" x2="1">
+          <stop offset="0" stop-color="#110820"/>
+          <stop offset="1" stop-color="#241039"/>
+        </linearGradient>
+      </defs>
+      <rect width="250" height="64" rx="10" fill="url(#bg)"/>
+      <g stroke="#bd6cff" stroke-width="1" opacity=".24">{lines}</g>
+      <g fill="#b768ff" opacity=".18">{dots}</g>
+      <g fill="#ffffff" font-family="Arial,sans-serif" font-size="27"
+         font-weight="900" text-anchor="middle"
+         style="paint-order:stroke;stroke:#6c2ca4;stroke-width:1px">{chars}</g>
+    </svg>""".format(
+        lines="".join(lines),
+        dots="".join(dots),
+        chars="".join(chars)
+    )
+
+
+def get_level(exp):
+    exp_sum = 0
+    level = 0
+    while exp_sum <= exp:
+        level += 1
+        exp_sum += level * 50
+    return level
+
+
+@routes.get("/")
+async def index(request):
+    session = await aiohttp_session.get_session(request)
+    context = {
+        "logged_in": False,
+        "registration_enabled": REGISTRATION_ENABLED
+    }
+
+    if session.get("token") and session.get("uid"):
+        uid = str(session["uid"])
+
+        def redis_int(key, default=0):
+            value = app["redis"].get(key)
+            try:
+                return int(value) if value is not None else default
+            except (TypeError, ValueError):
+                return default
+
+        exp = redis_int("uid:{}:exp".format(uid))
+
+        context.update({
+            "logged_in": True,
+            "token": session["token"],
+            "uid": uid,
+            "email": app["redis"].get("uid:{}:email".format(uid)) or "Oyuncu",
+            "level": get_level(exp),
+            "silver": redis_int("uid:{}:slvr".format(uid)),
+            "gold": redis_int("uid:{}:gld".format(uid)),
+            "energy": redis_int("uid:{}:enrg".format(uid)),
+            "update_time": config["webserver"]["update_time"]
+        })
+
+    return aiohttp_jinja2.render_template(
+        "index.html",
+        request,
+        context=context
+    )
+
+
+@routes.post("/login")
+async def login(request):
+    data = await request.post()
+
+    email = normalize_email(data.get("email"))
+    password = data.get("password", "")
+
+    if not email or not password:
+        return json_result(
+            "E-posta ve şifre alanlarını doldur.",
+            status=400
+        )
+
+    if not EMAIL_RE.match(email):
+        return json_result(
+            "Geçerli bir e-posta adresi gir.",
+            status=400
+        )
+
+    uid = app["redis"].get("email:{}".format(email))
+
+    # Account enumeration is intentionally avoided.
+    if not uid:
+        return json_result(
+            "E-posta adresi veya şifre hatalı.",
+            status=401
+        )
+
+    stored = app["redis"].get("uid:{}:webpass".format(uid))
+    if not stored or not verify_password(password, stored):
+        return json_result(
+            "E-posta adresi veya şifre hatalı.",
+            status=401
+        )
+
+    game_token = find_game_token(uid)
+    if not game_token:
+        return json_result(
+            "Oyun hesabı doğrulanamadı. Yöneticiyle iletişime geç.",
+            status=500
+        )
+
+    session = await aiohttp_session.new_session(request)
+    session["uid"] = str(uid)
+    session["token"] = game_token
+
+    return json_result(
+        "Giriş başarılı. Avatar Life hazırlanıyor...",
+        ok=True
+    )
+
+
+@routes.get("/captcha")
+async def captcha(request):
+    session = await aiohttp_session.get_session(request)
+
+    # Basit 6 haneli rastgele sayı.
+    code = new_captcha()
+    session["captcha"] = code
+
+    response = web.json_response({
+        "ok": True,
+        "code": code
+    })
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+@routes.post("/register")
+async def register_account(request):
+    if not REGISTRATION_ENABLED:
+        return json_result(
+            "Kayıt sistemi şu anda kapalı.",
+            status=403,
+            refresh_captcha=False
+        )
+
+    data = await request.post()
+
+    email = normalize_email(data.get("email"))
+    password = data.get("password", "")
+    password_repeat = data.get("password_repeat", "")
+    captcha_value = (data.get("captcha") or "").strip()
+
+    if not EMAIL_RE.match(email):
+        return json_result(
+            "Geçerli bir e-posta adresi gir.",
+            status=400,
+            refresh_captcha=False
+        )
+
+    if len(password) < 6:
+        return json_result(
+            "Şifre en az 6 karakter olmalı.",
+            status=400,
+            refresh_captcha=False
+        )
+
+    if len(password) > 128:
+        return json_result(
+            "Şifre çok uzun.",
+            status=400,
+            refresh_captcha=False
+        )
+
+    if password != password_repeat:
+        return json_result(
+            "Şifreler birbiriyle aynı değil.",
+            status=400,
+            refresh_captcha=False
+        )
+
+    if not CAPTCHA_RE.match(captcha_value):
+        return json_result(
+            "Doğrulama kodu 6 haneli olmalı.",
+            status=400,
+            refresh_captcha=True
+        )
+
+    session = await aiohttp_session.get_session(request)
+    expected = session.get("captcha", "")
+    session["captcha"] = ""
+
+    if not expected or not secrets.compare_digest(captcha_value, expected):
+        return json_result(
+            "Doğrulama kodu yanlış. Yeni kod oluşturuldu.",
+            status=400,
+            refresh_captcha=True
+        )
+
+    if app["redis"].exists("email:{}".format(email)):
+        return json_result(
+            "Bu e-posta adresi zaten kayıtlı.",
+            status=409,
+            refresh_captcha=True
+        )
+
+    uid, game_token = utils.bot_common.new_account(app["redis"])
+
+    # Yeni hesap baslangic degerleri:
+    # get_level() hesabina gore 39.000 EXP = Level 40.
+    app["redis"].set("uid:{}:gld".format(uid), 25000)
+    app["redis"].set("uid:{}:exp".format(uid), 39000)
+
+    pipe = app["redis"].pipeline()
+    pipe.set("email:{}".format(email), uid)
+    pipe.set("uid:{}:email".format(uid), email)
+    pipe.set("uid:{}:webpass".format(uid), hash_password(password))
+    pipe.execute()
+
+    return json_result(
+        "Hesabın başarıyla oluşturuldu. Şimdi giriş yapabilirsin.",
+        ok=True,
+        refresh_captcha=False
+    )
+
+
+@routes.get("/logout")
+async def logout(request):
+    session = await aiohttp_session.get_session(request)
+
+    # Oturumu kesin olarak geçersiz kıl.
+    try:
+        session.invalidate()
+    except AttributeError:
+        session.clear()
+
+    response = web.HTTPFound("/?logged_out=1")
+    # EncryptedCookieStorage varsayılan cookie adı.
+    response.del_cookie("AIOHTTP_SESSION", path="/")
+    response.headers["Cache-Control"] = "no-store, no-cache, must-revalidate, max-age=0"
+    response.headers["Pragma"] = "no-cache"
+    response.headers["Expires"] = "0"
+    return response
+
+
+@routes.get("/kayitol")
+async def legacy_register(request):
+    raise web.HTTPFound("/")
+
+
+@routes.get("/prelogin")
+async def prelogin(request):
+    if "sid" not in request.query:
+        raise web.HTTPClientError()
+
+    try:
+        uid = int(request.query["sid"])
+    except ValueError:
+        raise web.HTTPClientError()
+
+    exp = int(app["redis"].get("uid:{}:exp".format(uid)))
+    return web.json_response({
+        "user": {
+            "bannerNetworkId": None,
+            "reg": 0,
+            "paymentGroup": "",
+            "preloginModuleIds": "",
+            "id": uid,
+            "avatariaLevel": get_level(exp)
+        }
+    })
+
+
+@routes.post("/social")
+async def social(request):
+    data = await request.post()
+
+    if not data.get("method"):
+        raise web.HTTPClientError()
+
+    if data["method"] == "getTestUsers":
+        return web.json_response({"uids": [str(data["user_id"])]})
+    elif data["method"] in ["getFriends", "getAppFriends"]:
+        return web.json_response([])
+    elif data["method"] == "getProfiles":
+        return web.json_response([{"id": data["uids"]}])
+
+    return web.json_response({})
+
+
+
+@routes.get(PANEL_PATH)
+async def admin_panel(request):
+    session = await aiohttp_session.get_session(request)
+    return aiohttp_jinja2.render_template(
+        "panel.html",
+        request,
+        context={
+            "authorized": panel_authorized(session),
+            "panel_path": PANEL_PATH
+        }
+    )
+
+
+@routes.post(PANEL_PATH + "/login")
+async def admin_panel_login(request):
+    data = await request.post()
+    if not secrets.compare_digest(data.get("password", ""), PANEL_PASSWORD):
+        return json_result("Panel şifresi hatalı.", status=401)
+
+    session = await aiohttp_session.get_session(request)
+    session["panel_admin"] = True
+    return json_result("Giriş başarılı.", ok=True)
+
+
+@routes.post(PANEL_PATH + "/lookup")
+async def admin_panel_lookup(request):
+    session = await aiohttp_session.get_session(request)
+    if not panel_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+
+    data = await request.post()
+    uid = (data.get("uid") or "").strip()
+    if not uid.isdigit():
+        return json_result("Geçerli bir UID gir.", status=400)
+
+    # Hesabın varlığını birkaç temel Redis anahtarı üzerinden doğrula.
+    exists = (
+        app["redis"].exists("uid:{}:gld".format(uid))
+        or app["redis"].exists("uid:{}:exp".format(uid))
+        or app["redis"].exists("uid:{}:email".format(uid))
+    )
+    if not exists:
+        return json_result("Bu UID bulunamadı.", status=404)
+
+    values = {}
+    for field in PANEL_FIELDS:
+        value = app["redis"].get("uid:{}:{}".format(uid, field))
+        values[field] = "" if value is None else value
+
+    current_exp = int(values.get("exp") or 0)
+    return web.json_response({
+        "ok": True,
+        "uid": uid,
+        "email": app["redis"].get("uid:{}:email".format(uid)) or "",
+        "values": values,
+        "level": get_level(current_exp)
+    })
+
+
+@routes.post(PANEL_PATH + "/save")
+async def admin_panel_save(request):
+    session = await aiohttp_session.get_session(request)
+    if not panel_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+
+    data = await request.post()
+    uid = (data.get("uid") or "").strip()
+    if not uid.isdigit():
+        return json_result("Geçerli bir UID gir.", status=400)
+
+    numeric_fields = {"gld", "slvr", "exp", "enrg", "crt", "hrt"}
+    pipe = app["redis"].pipeline()
+
+    for field in PANEL_FIELDS:
+        if field not in data:
+            continue
+
+        value = (data.get(field) or "").strip()
+        key = "uid:{}:{}".format(uid, field)
+
+        if value == "":
+            # Boş bırakılan değer mevcut Redis değerini silmez.
+            continue
+
+        if field in numeric_fields:
+            try:
+                numeric_value = int(value)
+            except ValueError:
+                return json_result("{} sayısal olmalı.".format(field), status=400)
+
+            if field == "exp":
+                if numeric_value < 1 or numeric_value > 1000:
+                    return json_result("Seviye 1 ile 1000 arasında olmalı.", status=400)
+                value = str(exp_for_level(numeric_value))
+
+        pipe.set(key, value)
+
+    pipe.execute()
+    return json_result("UID {} güncellendi.".format(uid), ok=True)
+
+
+@routes.post(PANEL_PATH + "/logout")
+async def admin_panel_logout(request):
+    session = await aiohttp_session.get_session(request)
+    session["panel_admin"] = False
+    return json_result("Panel oturumu kapatıldı.", ok=True)
+
+
+
+@routes.get(MOD_PATH)
+async def moderator_panel(request):
+    session = await aiohttp_session.get_session(request)
+    return aiohttp_jinja2.render_template(
+        "moderator.html", request,
+        context={"authorized": moderator_authorized(session), "mod_path": MOD_PATH,
+                 "moderator_role": int(session.get("moderator_role", 0) or 0),
+                 "moderator_uid": session.get("moderator_uid", "")}
+    )
+
+
+@routes.post(MOD_PATH + "/login")
+async def moderator_login(request):
+    data = await request.post()
+    email = normalize_email(data.get("email"))
+    password = data.get("password", "")
+    uid = app["redis"].get("email:{}".format(email))
+    if not uid:
+        return json_result("E-posta veya şifre hatalı.", status=401)
+    encoded = app["redis"].get("uid:{}:webpass".format(uid))
+    if not encoded or not verify_password(password, encoded):
+        return json_result("E-posta veya şifre hatalı.", status=401)
+    role = int(app["redis"].get("uid:{}:role".format(uid)) or 0)
+    if role not in (2, 4):
+        return json_result("Bu hesabın moderatör paneline erişim yetkisi yok.", status=403)
+    session = await aiohttp_session.get_session(request)
+    session["moderator_admin"] = True
+    session["moderator_uid"] = str(uid)
+    session["moderator_role"] = role
+    return web.json_response({"ok": True, "message": "Giriş başarılı.", "uid": str(uid),
+                              "role": role,
+                              "permissions": {"warn": moderator_can(session,"warn"),
+                                              "mute": moderator_can(session,"mute"),
+                                              "ban": moderator_can(session,"ban")}})
+
+@routes.post(MOD_PATH + "/logout")
+async def moderator_logout(request):
+    session = await aiohttp_session.get_session(request)
+    session["moderator_admin"] = False
+    session.pop("moderator_uid", None)
+    session.pop("moderator_role", None)
+    return json_result("Oturum kapatıldı.", ok=True)
+
+
+@routes.post(MOD_PATH + "/lookup")
+async def moderator_lookup(request):
+    import time
+    session = await aiohttp_session.get_session(request)
+    if not moderator_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+    data = await request.post()
+    uid = (data.get("uid") or "").strip()
+    if not uid.isdigit() or not player_exists(uid):
+        return json_result("Oyuncu bulunamadı.", status=404)
+
+    appearance = app["redis"].lrange("uid:{}:appearance".format(uid), 0, 0)
+    name = appearance[0] if appearance else "İsimsiz"
+    now = int(time.time())
+    mute_until = int(app["redis"].get("uid:{}:mute_until".format(uid)) or 0)
+    ban_until = int(app["redis"].get("uid:{}:ban_until".format(uid)) or 0)
+    banned_by = app["redis"].get("uid:{}:banned".format(uid)) or ""
+    email = app["redis"].get("uid:{}:email".format(uid)) or ""
+    level = get_level(int(app["redis"].get("uid:{}:exp".format(uid)) or 0))
+    online = bool(app["redis"].exists("uid:{}:online_presence".format(uid)))
+    mute_reason = app["redis"].get("uid:{}:mute_reason".format(uid)) or ""
+    ban_reason = app["redis"].get("uid:{}:ban_reason".format(uid)) or ""
+    return web.json_response({
+        "ok": True, "uid": uid, "name": name, "email": email,
+        "level": level,
+        "role": int(app["redis"].get("uid:{}:role".format(uid)) or 0),
+        "online": online,
+        "muted": mute_until == -1 or mute_until > now,
+        "mute_until": mute_until, "mute_reason": mute_reason,
+        "banned": bool(banned_by) and (ban_until == -1 or ban_until > now or ban_until == 0),
+        "ban_until": ban_until, "ban_reason": ban_reason, "banned_by": banned_by
+    })
+
+
+
+@routes.post(MOD_PATH + "/search")
+async def moderator_search(request):
+    session = await aiohttp_session.get_session(request)
+    if not moderator_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+    data = await request.post()
+    q = (data.get("q") or "").strip().lower()
+    if len(q) < 1:
+        return web.json_response({"ok": True, "players": []})
+
+    results = []
+    seen = set()
+
+    # UID ile dogrudan arama
+    if q.isdigit() and player_exists(q):
+        seen.add(q)
+        results.append(q)
+
+    # E-posta anahtarlari ve appearance listeleri uzerinden sinirli arama.
+    # SCAN yerine cursor kullanilir; Redis'i tek istekte kilitlemez.
+    cursor = 0
+    checked = 0
+    while True:
+        cursor, keys = app["redis"].scan(cursor=cursor, match="uid:*:email", count=150)
+        for key in keys:
+            checked += 1
+            parts = key.split(":")
+            if len(parts) < 3:
+                continue
+            uid = parts[1]
+            if uid in seen:
+                continue
+            email = (app["redis"].get(key) or "").lower()
+            appearance = app["redis"].lrange("uid:{}:appearance".format(uid), 0, 0)
+            name = (appearance[0] if appearance else "").lower()
+            if q in uid.lower() or q in email or (name and q in name):
+                seen.add(uid)
+                results.append(uid)
+                if len(results) >= 8:
+                    break
+        if len(results) >= 8 or cursor == 0 or checked >= 1500:
+            break
+
+    players = []
+    now = int(time.time())
+    for uid in results[:8]:
+        appearance = app["redis"].lrange("uid:{}:appearance".format(uid), 0, 0)
+        name = appearance[0] if appearance else "İsimsiz"
+        mute_until = int(app["redis"].get("uid:{}:mute_until".format(uid)) or 0)
+        ban_until = int(app["redis"].get("uid:{}:ban_until".format(uid)) or 0)
+        banned_by = app["redis"].get("uid:{}:banned".format(uid)) or ""
+        players.append({
+            "uid": uid, "name": name,
+            "level": get_level(int(app["redis"].get("uid:{}:exp".format(uid)) or 0)),
+            "role": int(app["redis"].get("uid:{}:role".format(uid)) or 0),
+            "online": bool(app["redis"].exists("uid:{}:online_presence".format(uid))),
+            "muted": mute_until == -1 or mute_until > now,
+            "banned": bool(banned_by) and (ban_until == -1 or ban_until > now or ban_until == 0)
+        })
+    return web.json_response({"ok": True, "players": players})
+
+
+@routes.post(MOD_PATH + "/action")
+async def moderator_action(request):
+    import json, time
+    session = await aiohttp_session.get_session(request)
+    if not moderator_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+    data = await request.post()
+    uid = (data.get("uid") or "").strip()
+    action = (data.get("action") or "").strip()
+    reason = (data.get("reason") or "").strip()
+    if not moderator_can(session, action):
+        return json_result("Oyun rolünün bu işlem için yetkisi yok.", status=403)
+    moderator_uid = str(session.get("moderator_uid", "0"))
+    moderator_role = int(session.get("moderator_role", 0) or 0)
+    if not uid.isdigit() or not player_exists(uid):
+        return json_result("Oyuncu bulunamadı.", status=404)
+
+    role = int(app["redis"].get("uid:{}:role".format(uid)) or 0)
+    if action in ("mute", "ban"):
+        if moderator_role == 2 and role >= 2:
+            return json_result("Moderatör başka bir yetkili hesaba ceza uygulayamaz.", status=403)
+        if moderator_role == 4 and role >= 4:
+            return json_result("Admin aynı veya daha yüksek yetkili hesaba ceza uygulayamaz.", status=403)
+
+    now = int(time.time())
+    if action in ("mute", "ban"):
+        duration = (data.get("duration") or "").strip()
+        if duration == "permanent":
+            until = -1
+        else:
+            try:
+                minutes = int(duration)
+                if minutes < 1 or minutes > 525600:
+                    raise ValueError
+            except ValueError:
+                return json_result("Geçerli bir ceza süresi seç.", status=400)
+            until = now + minutes * 60
+
+    if action == "mute":
+        app["redis"].set("uid:{}:mute_until".format(uid), until)
+        app["redis"].set("uid:{}:mute_reason".format(uid), reason)
+        app["redis"].rpush("moderation:commands", json.dumps({"action":"mute","uid":uid,"until":until,"reason":reason,"moderator_uid":moderator_uid}, ensure_ascii=False))
+        return json_result("Oyuncu susturuldu.", ok=True)
+
+    if action == "unmute":
+        app["redis"].delete("uid:{}:mute_until".format(uid), "uid:{}:mute_reason".format(uid))
+        app["redis"].rpush("moderation:commands", json.dumps({"action":"unmute","uid":uid,"moderator_uid":moderator_uid}, ensure_ascii=False))
+        return json_result("Susturma kaldırıldı.", ok=True)
+
+    if action == "ban":
+        app["redis"].set("uid:{}:banned".format(uid), moderator_uid)
+        app["redis"].set("uid:{}:ban_time".format(uid), int(time.time()*1000))
+        app["redis"].set("uid:{}:ban_until".format(uid), until)
+        app["redis"].set("uid:{}:ban_reason".format(uid), reason)
+        app["redis"].rpush("moderation:commands", json.dumps({"action":"ban","uid":uid,"until":until,"reason":reason,"moderator_uid":moderator_uid}, ensure_ascii=False))
+        return json_result("Oyuncu banlandı. Çevrimiçiyse bağlantısı en geç sonraki kontrol/girişte engellenecek.", ok=True)
+
+    if action == "unban":
+        app["redis"].delete("uid:{}:banned".format(uid), "uid:{}:ban_time".format(uid),
+                            "uid:{}:ban_until".format(uid), "uid:{}:ban_reason".format(uid))
+        app["redis"].rpush("moderation:commands", json.dumps({"action":"unban","uid":uid,"moderator_uid":moderator_uid}, ensure_ascii=False))
+        return json_result("Ban kaldırıldı.", ok=True)
+
+    if action == "warn":
+        if not reason:
+            return json_result("Uyarı mesajı boş olamaz.", status=400)
+        payload = json.dumps({"ts": now, "message": reason}, ensure_ascii=False)
+        app["redis"].rpush("uid:{}:moderator_messages".format(uid), payload)
+        app["redis"].ltrim("uid:{}:moderator_messages".format(uid), -20, -1)
+        app["redis"].rpush("moderation:commands", json.dumps({"action":"warn","uid":uid,"message":reason,"moderator_uid":moderator_uid}, ensure_ascii=False))
+        return json_result("Uyarı kuyruğa eklendi; oyuncuya oyun sunucusu üzerinden iletilecek.", ok=True)
+
+    return json_result("Geçersiz işlem.", status=400)
+
+
+@routes.get(MOD_PATH + "/logs")
+async def moderator_logs(request):
+    import json
+    session = await aiohttp_session.get_session(request)
+    if not moderator_authorized(session):
+        return json_result("Yetkisiz erişim.", status=403)
+    rows = []
+    for raw in app["redis"].lrange(MOD_LOG_KEY, 0, 49):
+        try:
+            rows.append(json.loads(raw))
+        except Exception:
+            pass
+    return web.json_response({"ok": True, "logs": rows})
+
+
+@routes.get("/appconfig.xml")
+async def appconfig(request):
+    session = await aiohttp_session.get_session(request)
+
+    if "token" not in session or "uid" not in session:
+        raise web.HTTPUnauthorized()
+
+    context = {
+        "token": session["token"],
+        "uid": session["uid"],
+        "ip": config["webserver"]["server_ip"],
+        "address": config["webserver"]["web_address"]
+    }
+    return aiohttp_jinja2.render_template(
+        "appconfig.xml",
+        request,
+        context=context
+    )
+
+
+@routes.get("/crossdomain.xml")
+async def crossdomain(request):
+    return web.Response(
+        text=CROSSDOMAIN_XML,
+        content_type="application/xml"
+    )
+
+
+async def main():
+    global app
+
+    
+@routes.get("/launcher-status")
+async def launcher_status(request):
+    import json
+    import os
+    import time
+
+    redis_client = request.app["redis"]
+
+    # Game server her online oyuncu icin bu anahtari
+    # 5 saniyelik TTL ile yeniliyor.
+    players = 0
+
+    try:
+        for key in redis_client.scan_iter(
+            match="uid:*:online_presence",
+            count=100
+        ):
+            try:
+                if redis_client.exists(key):
+                    players += 1
+            except Exception:
+                pass
+    except Exception:
+        players = 0
+
+    announcement = {
+        "enabled": False,
+        "title": "DUYURU",
+        "message": ""
+    }
+
+    announcement_path = os.path.join(
+        os.path.dirname(os.path.abspath(__file__)),
+        "files",
+        "launcher-announcement.json"
+    )
+
+    try:
+        with open(announcement_path, "r", encoding="utf-8") as f:
+            loaded = json.load(f)
+
+        if isinstance(loaded, dict):
+            announcement["enabled"] = bool(
+                loaded.get("enabled", False)
+            )
+            announcement["title"] = str(
+                loaded.get("title", "DUYURU")
+            )
+            announcement["message"] = str(
+                loaded.get("message", "")
+            )
+
+    except Exception:
+        pass
+
+    return web.json_response({
+        "ok": True,
+        "online": True,
+        "players": players,
+        "announcement": announcement,
+        "serverTime": int(time.time())
+    })
+
+
+app = web.Application()
+    app.add_routes(routes)
+    app["redis"] = redis.Redis(decode_responses=True)
+
+    fernet_key = fernet.Fernet.generate_key()
+    secret_key = base64.urlsafe_b64decode(fernet_key)
+    aiohttp_session.setup(
+        app,
+        EncryptedCookieStorage(secret_key)
+    )
+
+    aiohttp_jinja2.setup(
+        app,
+        loader=jinja2.FileSystemLoader("templates")
+    )
+
+    runner = web.AppRunner(app)
+    await runner.setup()
+
+    site = web.TCPSite(
+        runner,
+        "192.168.1.104",
+        int(config["webserver"]["web_port"])
+    )
+    await site.start()
+
+
+if __name__ == "__main__":
+    loop = asyncio.get_event_loop()
+    loop.create_task(main())
+    loop.run_forever()

@@ -1,0 +1,18 @@
+nohup: girdi gözardı ediliyor
+Task exception was never retrieved
+future: <Task finished coro=<main() done, defined at web.py:854> exception=OSError(98, "error while attempting to bind on address ('192.168.1.104', 8080): address already in use")>
+Traceback (most recent call last):
+  File "/usr/lib/python3.6/asyncio/base_events.py", line 1062, in create_server
+    sock.bind(sa)
+OSError: [Errno 98] Address already in use
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "web.py", line 881, in main
+    await site.start()
+  File "/home/ciceksami/.local/lib/python3.6/site-packages/aiohttp/web_runner.py", line 128, in start
+    reuse_port=self._reuse_port,
+  File "/usr/lib/python3.6/asyncio/base_events.py", line 1066, in create_server
+    % (sa, err.strerror.lower()))
+OSError: [Errno 98] error while attempting to bind on address ('192.168.1.104', 8080): address already in use

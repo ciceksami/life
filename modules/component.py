@@ -19,12 +19,23 @@ class Component(Module):
         subcommand = msg[1].split(".")[2]
         if subcommand == "sm":  # send message
             msg.pop(0)
+            # Redis tabanli web/moderator susturma + eski bellek mutesi
+            mute_until = int(self.server.redis.get(f"uid:{client.uid}:mute_until") or 0)
+            if mute_until == -1 or mute_until > int(time.time()):
+                if mute_until == -1:
+                    txt = "Sohbet erişimin kalıcı olarak susturuldu."
+                else:
+                    mins = max(1, int((mute_until-time.time()+59)//60))
+                    txt = f"Sohbet erişimin {mins} dakika daha susturuldu."
+                client.send(["cp.ms.rsm", {"txt": txt}])
+                return
+            elif mute_until:
+                self.server.redis.delete(f"uid:{client.uid}:mute_until",
+                                         f"uid:{client.uid}:mute_reason")
             if client.uid in self.mute:
                 time_left = self.mute[client.uid]-time.time()
                 if time_left > 0:
-                    client.send(["cp.ms.rsm", {"txt": "Oyuncunun hala  "
-                                                      f"{int(time_left)} "
-                                                      "dakika mutesi var"}])
+                    client.send(["cp.ms.rsm", {"txt": f"Oyuncunun susturması devam ediyor."}])
                     return
                 else:
                     del self.mute[client.uid]
@@ -154,6 +165,7 @@ class Component(Module):
             client.send(["cp.ms.rsm", {"txt": "Oyuncu bulunamadı"}])
             return
         self.mute[uid] = time.time()+minutes*60
+        self.server.redis.set(f"uid:{uid}:mute_until", int(time.time())+minutes*60)
         for tmp in self.server.online.copy():
             if tmp.uid != uid:
                 continue

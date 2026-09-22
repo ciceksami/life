@@ -14,7 +14,7 @@ modules = ["client_error", "house", "outside", "user_rating",  "mail", "avatar",
            "location_game", "relations", "social_request", "user_rating",
            "competition", "furniture", "billing", "component", "support",
            "passport", "player", "statistics", "shop", "mobile", "confirm",
-           "craft", "profession", "inventory", "event", "chatdecor"]
+           "craft", "profession", "inventory", "event", "chatdecor", "quest_system"]
 
 
 def get_git_revision_short_hash():
@@ -69,6 +69,7 @@ class Server():
             client.connection.shutdown(2)
             return
         elif data["type"] == 34:
+            logging.warning("CLIENT PACKET uid=%s >>> %r", client.uid, data.get("msg"))
             prefix = data["msg"][1].split(".")[0]
             if prefix not in self.modules:
                 logging.warning(f"Command {data['msg'][1]} not found")
@@ -82,7 +83,13 @@ class Server():
             return
         banned = self.redis.get(f"uid:{uid}:banned")
         if banned:
-            ban_time = int(self.redis.get(f"uid:{uid}:ban_time"))
+            ban_until = int(self.redis.get(f"uid:{uid}:ban_until") or 0)
+            if ban_until not in (0, -1) and ban_until <= int(time.time()):
+                self.redis.delete(f"uid:{uid}:banned", f"uid:{uid}:ban_time",
+                                  f"uid:{uid}:ban_until", f"uid:{uid}:ban_reason")
+                banned = None
+        if banned:
+            ban_time = int(self.redis.get(f"uid:{uid}:ban_time") or int(time.time()*1000))
             client.send([10, "User is banned",
                          {"duration": 999999, "banTime": ban_time,
                           "notes": "Опа бан", "reviewerId": banned,
@@ -107,6 +114,21 @@ class Server():
             self.inv[uid].expire = None
         client.send([client.uid, True, False, False], type_=1)
         client.checksummed = True
+
+        # Web moderatör panelinden bekleyen uyarıları oyun içinde göster.
+        import json
+        msg_key = f"uid:{uid}:moderator_messages"
+        while True:
+            raw = self.redis.lpop(msg_key)
+            if not raw:
+                break
+            try:
+                item = json.loads(raw)
+                text = item.get("message", "")
+            except Exception:
+                text = str(raw)
+            if text:
+                client.send(["cp.ms.rmm", {"sndr": "0", "txt": text}])
 
     def get_user_data(self, uid):
         pipe = self.redis.pipeline()
@@ -201,14 +223,59 @@ class Server():
                               "d": int(item[3]), "lid": int(lid)})
         return items
 
+    def _process_moderation_commands(self):
+        import json
+        while True:
+            raw = self.redis.lpop("moderation:commands")
+            if not raw:
+                break
+            try:
+                cmd = json.loads(raw)
+                action = cmd.get("action")
+                uid = str(cmd.get("uid"))
+                moderator_uid = str(cmd.get("moderator_uid", "0"))
+                target = next((c for c in self.online.copy() if str(c.uid) == uid), None)
+                if action == "warn" and target:
+                    target.send(["cp.ms.rmm", {"sndr": moderator_uid, "txt": cmd.get("message", "")}])
+                elif action == "mute" and target:
+                    until = int(cmd.get("until", 0))
+                    minutes = 525600 if until == -1 else max(1, int((until-time.time()+59)//60))
+                    target.send(["cp.m.bccu", {"bcu": {"notes": cmd.get("reason",""),
+                        "reviewerId": moderator_uid, "mid": moderator_uid, "id": None,
+                        "reviewState": 1, "userId": uid, "mbt": int(time.time()*1000),
+                        "mbd": minutes, "categoryId": 14}}])
+                elif action == "ban" and target:
+                    ban_time = int(self.redis.get(f"uid:{uid}:ban_time") or int(time.time()*1000))
+                    target.send([10, "User is banned", {"duration":999999,"banTime":ban_time,
+                        "notes":cmd.get("reason",""),"reviewerId":moderator_uid,"reasonId":0,
+                        "unbanType":"none","leftTime":0,"id":None,"reviewState":1,
+                        "userId":uid,"moderatorId":moderator_uid}], type_=2)
+                    try: target.connection.shutdown(2)
+                    except OSError: pass
+            except Exception:
+                logging.exception("Moderator command failed")
+
     def _background(self):
         while True:
+            self._process_moderation_commands()
+            # Web moderator paneli icin canli oyuncu presence bilgisi.
+            now_presence = int(time.time())
+            online_uids = []
+            for online_client in self.online.copy():
+                try:
+                    online_uid = str(online_client.uid)
+                    if not online_uid:
+                        continue
+                    online_uids.append(online_uid)
+                    self.redis.setex(f"uid:{online_uid}:online_presence", 5, now_presence)
+                except Exception:
+                    pass
             logging.info(f"Players online: {len(self.online)}")
             for uid in self.inv.copy():
                 inv = self.inv[uid]
                 if inv.expire and time.time() - inv.expire > 0:
                     del self.inv[uid]
-            time.sleep(60)
+            time.sleep(1)
 
 
 if __name__ == "__main__":

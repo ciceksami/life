@@ -1,0 +1,58 @@
+AVATAR LIFE #2017 — QUEST SYSTEM v1
+
+DOSYALAR
+- quest_system.py : Görev motoru
+- economy.py      : Ödül ekonomisi / limitler
+- billing.py      : Public free-gold kapalı, role>=5 test ayrımı
+- avatar.py       : Avatar oluşturma görev hook'u
+- shop.py         : Başarılı alışveriş görev hook'u
+- relations.py    : Başarılı ilişki/sosyal görev hook'u
+
+GÖREVLER
+Başlangıç:
+- Avatarını oluştur -> 1000 Silver
+- İlk alışveriş -> 1 Gold + 500 Silver
+- İlk sosyal etkileşim -> 1 Gold
+
+Günlük:
+- Giriş -> 500 Silver
+- 30 dakika -> 2 Gold
+- 3 sosyal etkileşim -> 2 Gold + 500 Silver
+- 2 alışveriş -> 2 Gold
+
+Haftalık:
+- 180 dakika -> 5 Gold + 2500 Silver
+- 15 sosyal etkileşim -> 5 Gold
+- 10 alışveriş -> 5 Gold + 2500 Silver
+
+RESET
+Daily/weekly veriler fiziksel olarak silinmek zorunda değildir.
+Görev anahtarında UTC gün/ISO hafta kimliği kullanılır. Yeni gün/haftada sistem
+otomatik olarak yeni anahtara geçer; eski kayıt ödülün tekrar alınmasına yol açmaz.
+
+TEK SEFERLİK CLAIM
+Redis SET NX kilidi kullanılır. Aynı görev/period ödülü ikinci kez alınamaz.
+
+PLAY TIME
+record_play_minutes(uid, minutes) hazırdır. Sunucunun gerçek heartbeat/timer
+dosyası bu pakette olmadığı için dakika üretimi istemciden kabul edilmez.
+Böylece oyuncu sahte paket gönderip süre görevi tamamlayamaz. Server timer
+bağlandığında daily/weekly play-time görevleri otomatik ilerler.
+
+SWF / UI
+Backend komutları qs.get ve qs.claim hazırdır. Mevcut SWF bu özel komutları
+tanımıyorsa görev ekranı görünmez; backend yine hazırdır. SWF'nin gerçek görev
+paketleri bulunduğunda bu iki cevap adı o protokole eşlenebilir.
+
+KURULUM
+1) cd ~/avatariapvp
+2) cp -a modules modules_backup_before_quest_v1
+3) ZIP'teki .py dosyalarını modules/ içine kopyala.
+4) python3 -m py_compile modules/quest_system.py modules/economy.py modules/billing.py modules/avatar.py modules/shop.py modules/relations.py
+5) python3 -m compileall -q modules
+6) Sunucuyu yeniden başlat.
+
+NOT
+Mevcut module loader klasördeki class_name/prefix modüllerini otomatik yüklüyorsa
+quest_system.py qs olarak yüklenir. Loader sabit liste kullanıyorsa qs modülünü
+o listeye ayrıca eklemek gerekir.

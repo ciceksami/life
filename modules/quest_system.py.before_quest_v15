@@ -1,0 +1,226 @@
+import time
+from datetime import datetime, timezone
+
+from modules.base_module import Module
+from modules import economy
+
+class_name = "QuestSystem"
+
+
+class QuestSystem(Module):
+    prefix = "qs"
+
+    QUESTS = {
+        # One-time starter chain
+        "starter_create_avatar": {
+            "type": "starter", "event": "create_avatar", "target": 1,
+            "reward": economy.STARTER_QUEST_REWARDS["create_avatar"],
+            "title": "Avatarını oluştur"
+        },
+        "starter_first_purchase": {
+            "type": "starter", "event": "purchase", "target": 1,
+            "reward": economy.STARTER_QUEST_REWARDS["first_purchase"],
+            "title": "İlk alışverişini yap"
+        },
+        "starter_first_social": {
+            "type": "starter", "event": "social", "target": 1,
+            "reward": economy.STARTER_QUEST_REWARDS["first_social_action"],
+            "title": "İlk sosyal etkileşimini yap"
+        },
+
+        # Daily
+        "daily_login": {
+            "type": "daily", "event": "login", "target": 1,
+            "reward": economy.DAILY_QUEST_REWARDS["login"],
+            "title": "Bugün oyuna giriş yap"
+        },
+        "daily_play_time": {
+            "type": "daily", "event": "play_minute", "target": 30,
+            "reward": economy.DAILY_QUEST_REWARDS["play_time"],
+            "title": "30 dakika oyunda kal"
+        },
+        "daily_social": {
+            "type": "daily", "event": "social", "target": 3,
+            "reward": economy.DAILY_QUEST_REWARDS["social"],
+            "title": "3 sosyal etkileşim yap"
+        },
+        "daily_shopping": {
+            "type": "daily", "event": "purchase", "target": 2,
+            "reward": economy.DAILY_QUEST_REWARDS["shopping"],
+            "title": "2 alışveriş yap"
+        },
+
+        # Weekly
+        "weekly_active": {
+            "type": "weekly", "event": "play_minute", "target": 180,
+            "reward": economy.WEEKLY_QUEST_REWARDS["active_player"],
+            "title": "Haftada 180 dakika oyunda kal"
+        },
+        "weekly_social": {
+            "type": "weekly", "event": "social", "target": 15,
+            "reward": economy.WEEKLY_QUEST_REWARDS["social_player"],
+            "title": "15 sosyal etkileşim yap"
+        },
+        "weekly_shopper": {
+            "type": "weekly", "event": "purchase", "target": 10,
+            "reward": economy.WEEKLY_QUEST_REWARDS["shopper"],
+            "title": "10 alışveriş yap"
+        },
+    }
+
+    def __init__(self, server):
+        self.server = server
+        self.commands = {
+            "get": self.get_quests,
+            "claim": self.claim,
+        }
+
+    @staticmethod
+    def _daily_period():
+        return datetime.now(timezone.utc).strftime("%Y%m%d")
+
+    @staticmethod
+    def _weekly_period():
+        now = datetime.now(timezone.utc)
+        iso = now.isocalendar()
+        return f"{iso.year}W{iso.week:02d}"
+
+    def _period(self, quest_type):
+        """Return stable Redis period id; compatible with tuple/named isocalendar results."""
+        now = datetime.now(timezone.utc)
+        if quest_type == "starter":
+            return "once"
+        if quest_type == "daily":
+            return now.strftime("%Y%m%d")
+        if quest_type == "weekly":
+            iso = now.isocalendar()
+            iso_year = iso[0]
+            iso_week = iso[1]
+            return "{}W{:02d}".format(iso_year, iso_week)
+        return "once"
+
+    def _progress_key(self, uid, quest_id, quest_type):
+        return f"uid:{uid}:quest:{self._period(quest_type)}:{quest_id}:progress"
+
+    def _claimed_key(self, uid, quest_id, quest_type):
+        return f"uid:{uid}:quest:{self._period(quest_type)}:{quest_id}:claimed"
+
+    def _validate_reward(self, reward):
+        gold = int(reward.get("gld", 0) or 0)
+        silver = int(reward.get("slvr", 0) or 0)
+        energy = int(reward.get("enrg", 0) or 0)
+        if gold < 0 or gold > economy.MAX_SINGLE_GOLD_REWARD:
+            return False
+        if silver < 0 or silver > economy.MAX_SINGLE_SILVER_REWARD:
+            return False
+        if energy < 0 or energy > economy.MAX_SINGLE_ENERGY_REWARD:
+            return False
+        return True
+
+    def record_event(self, uid, event, amount=1):
+        """Trusted server-side progress entry point."""
+        try:
+            amount = int(amount)
+        except (TypeError, ValueError):
+            return
+        if amount <= 0:
+            return
+
+        redis = self.server.redis
+        for quest_id, quest in self.QUESTS.items():
+            if quest["event"] != event:
+                continue
+
+            progress_key = self._progress_key(uid, quest_id, quest["type"])
+            claimed_key = self._claimed_key(uid, quest_id, quest["type"])
+            if redis.get(claimed_key):
+                continue
+
+            current = int(redis.get(progress_key) or 0)
+            target = int(quest["target"])
+            if current >= target:
+                continue
+            redis.set(progress_key, min(target, current + amount))
+
+    def get_state(self, uid):
+        result = []
+        redis = self.server.redis
+        for quest_id, quest in self.QUESTS.items():
+            progress = int(redis.get(
+                self._progress_key(uid, quest_id, quest["type"])) or 0)
+            claimed = bool(redis.get(
+                self._claimed_key(uid, quest_id, quest["type"])))
+            result.append({
+                "id": quest_id,
+                "type": quest["type"],
+                "title": quest["title"],
+                "event": quest["event"],
+                "progress": min(progress, quest["target"]),
+                "target": quest["target"],
+                "completed": progress >= quest["target"],
+                "claimed": claimed,
+                "reward": quest["reward"],
+            })
+        return result
+
+    def get_quests(self, msg, client):
+        # Opening the quest screen also counts as today's authenticated login.
+        self.record_event(client.uid, "login", 1)
+        client.send(["qs.get", {"quests": self.get_state(client.uid)}])
+
+    def claim(self, msg, client):
+        payload = msg[2] if len(msg) > 2 and isinstance(msg[2], dict) else {}
+        quest_id = str(payload.get("id", ""))
+        result = self.claim_reward(client.uid, quest_id)
+
+        if result.get("ok"):
+            user_data = self.server.get_user_data(client.uid)
+            client.send(["ntf.res", {"res": {
+                "gld": user_data["gld"], "slvr": user_data["slvr"],
+                "enrg": user_data["enrg"], "emd": user_data["emd"]
+            }}])
+        client.send(["qs.claim", result])
+
+    def claim_reward(self, uid, quest_id):
+        quest = self.QUESTS.get(quest_id)
+        if not quest:
+            return {"ok": False, "reason": "quest_not_found"}
+
+        reward = quest["reward"]
+        if not self._validate_reward(reward):
+            return {"ok": False, "reason": "invalid_reward"}
+
+        redis = self.server.redis
+        progress_key = self._progress_key(uid, quest_id, quest["type"])
+        claimed_key = self._claimed_key(uid, quest_id, quest["type"])
+
+        if int(redis.get(progress_key) or 0) < int(quest["target"]):
+            return {"ok": False, "reason": "not_completed"}
+
+        # Redis SET NX is the anti-double-claim lock.
+        lock = redis.set(claimed_key, int(time.time()), nx=True)
+        if not lock:
+            return {"ok": False, "reason": "already_claimed"}
+
+        try:
+            pipe = redis.pipeline()
+            gold = int(reward.get("gld", 0) or 0)
+            silver = int(reward.get("slvr", 0) or 0)
+            energy = int(reward.get("enrg", 0) or 0)
+            if gold:
+                pipe.incrby(f"uid:{uid}:gld", gold)
+            if silver:
+                pipe.incrby(f"uid:{uid}:slvr", silver)
+            if energy:
+                pipe.incrby(f"uid:{uid}:enrg", energy)
+            pipe.execute()
+        except Exception:
+            # Allow retry if the balance update itself failed.
+            redis.delete(claimed_key)
+            raise
+
+        return {"ok": True, "id": quest_id, "reward": reward}
+
+    def record_play_minutes(self, uid, minutes):
+        """Call this from a trusted server timer/heartbeat."""
+        self.record_event(uid, "play_minute", minutes)

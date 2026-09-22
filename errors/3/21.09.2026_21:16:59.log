@@ -1,0 +1,4 @@
+ClientError: Mon Sep 21 21:16:55 GMT+0300 2026 [ERROR] itemType is null, itemId=None
+Mon Sep 21 21:16:54 GMT+0300 2026 [INFO] Client said: 34: ["house_3_livingroom", "h.r.u", {x: 4.68, st: 23, at: "", y: 2.96, d: 3, uid: "3"}]
+Mon Sep 21 21:16:52 GMT+0300 2026 [INFO] Client said: 34: ["house_3_livingroom", "h.r.m", {dy: 2.96, sx: 4.05, sy: 0.1, dx: 4.68, uid: "3"}]
+Mon Sep 21 21:16:51 GMT+0300 2026 [INFO] Server said: 34: ["cp.cht.sm", {rid: "house_3_livingroom", msg: {mid: null, tp: "chatTextMessage", cid: null, sid: "3", tag: null, msg: "."}}]

@@ -1,0 +1,2267 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Avatar Life #2017</title>
+<link rel="icon" type="image/png" href="/files/favicon.png">
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+html,body{width:100%;height:100%;overflow:hidden}
+body{font-family:Inter,Segoe UI,Arial,sans-serif;background:#0b0615;color:#fff}
+
+.avataria-bg{
+    position:fixed;inset:0;z-index:0;
+    background-image:url("/files/avatar-life-banner.png");
+    background-size:cover;background-position:center;background-repeat:no-repeat;
+    transform:scale(1.012)
+}
+.scene-shade{
+    position:fixed;inset:0;z-index:1;pointer-events:none;
+    background:
+      linear-gradient(90deg,rgba(7,3,18,.96) 0%,rgba(8,4,22,.82) 28%,rgba(9,4,24,.36) 53%,rgba(8,4,20,.10) 75%,rgba(6,3,16,.20) 100%),
+      linear-gradient(0deg,rgba(5,2,14,.60),transparent 38%)
+}
+.scene-light{
+    position:fixed;z-index:2;left:14%;top:48%;width:580px;height:580px;
+    transform:translate(-50%,-50%);border-radius:50%;
+    background:radial-gradient(circle,rgba(170,83,255,.16),rgba(124,55,215,.05) 42%,transparent 68%);
+    filter:blur(4px);pointer-events:none;animation:ambient 6s ease-in-out infinite alternate
+}
+@keyframes ambient{from{opacity:.55;transform:translate(-50%,-50%) scale(.92)}to{opacity:1;transform:translate(-50%,-50%) scale(1.08)}}
+
+.auth-shell{
+    position:relative;z-index:5;width:100vw;height:100vh;
+    display:grid;grid-template-columns:minmax(390px,560px) minmax(370px,480px);
+    align-items:center;gap:clamp(34px,6vw,100px);
+    padding:40px clamp(34px,7vw,132px)
+}
+.brand-side{align-self:center;max-width:560px;animation:brandIn .7s cubic-bezier(.16,1,.3,1) both}
+@keyframes brandIn{from{opacity:0;transform:translateX(-34px)}to{opacity:1;transform:none}}
+
+.brand-pill{
+    display:inline-flex;align-items:center;gap:8px;padding:7px 11px;border-radius:999px;
+    border:1px solid rgba(214,167,255,.21);background:rgba(166,78,244,.08);
+    color:#d9b6ff;font-size:9px;font-weight:800;letter-spacing:2px;backdrop-filter:blur(10px)
+}
+.brand-pill:before{content:"";width:6px;height:6px;border-radius:50%;background:#c36cff;box-shadow:0 0 14px #b959ff}
+.brand-title{margin-top:22px;font-size:clamp(50px,5.4vw,82px);font-weight:950;line-height:.86;letter-spacing:5px;text-transform:uppercase;text-shadow:0 10px 45px rgba(0,0,0,.42)}
+.brand-title span{display:block;margin-top:14px;color:#d3a1ff;font-size:.42em;letter-spacing:12px}
+.brand-copy{margin-top:22px;max-width:470px;color:rgba(239,232,247,.68);font-size:13px;line-height:1.75;text-shadow:0 2px 8px rgba(0,0,0,.7)}
+.brand-meta{display:flex;gap:9px;flex-wrap:wrap;margin-top:22px}
+.brand-meta span{padding:8px 11px;border:1px solid rgba(255,255,255,.08);border-radius:10px;background:rgba(7,3,17,.28);backdrop-filter:blur(12px);color:#a99db8;font-size:9px;letter-spacing:1.3px}
+
+.auth-card{
+    position:relative;overflow:hidden;border-radius:28px;padding:8px;
+    border:1px solid rgba(220,181,255,.18);
+    background:linear-gradient(145deg,rgba(255,255,255,.08),rgba(255,255,255,.018));
+    box-shadow:0 36px 110px rgba(0,0,0,.52),0 0 70px rgba(129,52,220,.08);
+    backdrop-filter:blur(26px) saturate(125%);
+    animation:cardIn .75s .05s cubic-bezier(.16,1,.3,1) both
+}
+.auth-card:before{content:"";position:absolute;inset:0 13% auto;height:1px;background:linear-gradient(90deg,transparent,rgba(231,198,255,.85),transparent)}
+@keyframes cardIn{from{opacity:0;transform:translateY(24px) scale(.985)}to{opacity:1;transform:none}}
+
+.auth-inner{
+    position:relative;min-height:565px;padding:30px;border-radius:21px;
+    background:linear-gradient(160deg,rgba(8,3,20,.93),rgba(7,3,16,.87));
+    border:1px solid rgba(255,255,255,.045)
+}
+.auth-tabs{
+    display:grid;grid-template-columns:1fr 1fr;gap:5px;padding:5px;
+    border-radius:14px;background:rgba(255,255,255,.035);border:1px solid rgba(255,255,255,.055)
+}
+.auth-tab{
+    height:42px;border:0;border-radius:10px;color:#81778d;background:transparent;
+    font-size:9px;font-weight:900;letter-spacing:1.8px;cursor:pointer;transition:.22s ease
+}
+.auth-tab.active{color:#fff;background:linear-gradient(135deg,rgba(181,80,255,.28),rgba(114,49,205,.20));box-shadow:inset 0 1px 0 rgba(255,255,255,.08),0 8px 20px rgba(0,0,0,.15)}
+
+.auth-panel{display:none;padding-top:27px;animation:panelIn .28s ease both}
+.auth-panel.active{display:block}
+@keyframes panelIn{from{opacity:0;transform:translateY(7px)}to{opacity:1;transform:none}}
+
+.auth-kicker{color:#bb76fb;font-size:8px;font-weight:900;letter-spacing:2.4px}
+.auth-heading{margin-top:8px;font-size:25px;font-weight:900;letter-spacing:.2px}
+.auth-sub{margin-top:8px;margin-bottom:23px;color:#8e8399;font-size:10px;line-height:1.55}
+
+.field{position:relative;margin-bottom:11px}
+.field label{display:block;margin:0 0 7px 3px;color:#8c8198;font-size:8px;font-weight:800;letter-spacing:1.25px}
+.field-wrap{position:relative}
+.field-icon{position:absolute;left:16px;top:50%;transform:translateY(-50%);z-index:2;color:#c183ff;font-size:12px;pointer-events:none}
+.field input{
+    width:100%;height:54px;padding:0 46px 0 44px;outline:0;border-radius:14px;
+    border:1px solid rgba(255,255,255,.085);background:rgba(255,255,255,.035);
+    color:#fff;font-size:12px;transition:border-color .2s,box-shadow .2s,background .2s,transform .2s
+}
+.field input::placeholder{color:#655c70}
+.field input:hover{border-color:rgba(195,126,255,.20)}
+.field input:focus{transform:translateY(-1px);border-color:rgba(190,105,255,.60);background:rgba(15,7,28,.92);box-shadow:0 0 0 4px rgba(174,76,255,.07),0 12px 30px rgba(0,0,0,.16)}
+.reveal{
+    position:absolute;right:10px;top:50%;transform:translateY(-50%);width:34px;height:34px;border:0;border-radius:9px;
+    color:#83788e;background:transparent;cursor:pointer;font-size:10px
+}
+.reveal:hover{color:#fff;background:rgba(255,255,255,.04)}
+
+.primary{
+    position:relative;overflow:hidden;width:100%;height:55px;margin-top:5px;border:0;border-radius:14px;
+    color:#fff;background:linear-gradient(115deg,#b349ff,#8537e4 52%,#642dbb);
+    font-size:10px;font-weight:950;letter-spacing:2px;cursor:pointer;
+    box-shadow:0 16px 38px rgba(108,40,184,.32),inset 0 1px 0 rgba(255,255,255,.17);
+    transition:transform .18s,box-shadow .18s,filter .18s
+}
+.primary:after{content:"";position:absolute;top:-40%;left:-40%;width:26%;height:180%;transform:rotate(22deg);background:rgba(255,255,255,.20);transition:left .48s ease}
+.primary:hover:not(:disabled){transform:translateY(-2px);filter:brightness(1.06);box-shadow:0 20px 46px rgba(108,40,184,.42),0 0 26px rgba(182,77,255,.12)}
+.primary:hover:not(:disabled):after{left:120%}
+.primary:disabled{opacity:.55;cursor:wait}
+
+.form-message{display:none;margin-top:11px;padding:10px 12px;border-radius:11px;text-align:center;font-size:10px;line-height:1.45;border:1px solid transparent}
+.form-message.show{display:block;animation:msgIn .22s ease both}
+.form-message.error{color:#ffc0ce;background:rgba(170,34,69,.14);border-color:rgba(255,97,132,.22)}
+.form-message.success{color:#c4ffdc;background:rgba(31,159,90,.13);border-color:rgba(89,255,161,.20)}
+@keyframes msgIn{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.captcha-card{margin:3px 0 11px;padding:9px;border-radius:14px;border:1px solid rgba(255,255,255,.07);background:rgba(255,255,255,.025)}
+.captcha-top{display:flex;align-items:center;justify-content:space-between;margin-bottom:7px}
+.captcha-top span{color:#8b8096;font-size:8px;font-weight:800;letter-spacing:1.3px}
+.captcha-image{
+    min-height:58px;display:flex;align-items:center;justify-content:center;overflow:hidden;border-radius:11px;
+    border:1px solid rgba(191,117,255,.15);background:rgba(14,6,26,.70)
+}
+.captcha-image img{display:block;width:100%;height:58px;object-fit:cover}
+.captcha-refresh{border:0;color:#c993ff;background:transparent;font-size:15px;cursor:pointer;padding:5px 7px;border-radius:8px}
+.captcha-refresh:hover{background:rgba(187,91,255,.07);color:#fff}
+
+.signature{position:fixed;z-index:10;right:34px;bottom:22px;font-family:"Brush Script MT","Segoe Script",cursive;font-size:31px;font-style:italic;letter-spacing:2px;color:rgba(255,255,255,.90);transform:rotate(-8deg);text-shadow:0 2px 5px rgba(0,0,0,.95),0 0 18px rgba(185,106,255,.70)}
+.signature:after{content:"";display:block;width:100%;height:1px;margin-top:-4px;background:linear-gradient(90deg,transparent,#fff,transparent)}
+.version{position:fixed;z-index:10;left:25px;bottom:19px;color:rgba(255,255,255,.38);font-size:8px;letter-spacing:2px;text-transform:uppercase}
+
+/* === Existing game area kept functionally separate from auth === */
+.game-page{position:relative;z-index:5;width:100vw;height:100vh;padding:24px 30px 28px;overflow:hidden}
+.game-topbar{height:70px;display:flex;align-items:center;justify-content:space-between}
+.game-brand{font-size:28px;font-weight:900;letter-spacing:4px;text-shadow:0 0 20px rgba(173,91,255,.55)}
+.game-brand span{color:#bd7cff}
+.game-tag{margin-top:5px;color:#a99db8;font-size:9px;letter-spacing:3px}
+.logout-button{padding:11px 17px;border:1px solid rgba(255,255,255,.14);border-radius:9px;color:#ddd2e8;background:rgba(10,5,24,.72);text-decoration:none;font-size:10px;letter-spacing:1px;backdrop-filter:blur(12px)}
+.logout-button:hover{color:#fff;border-color:rgba(189,124,255,.55)}
+.game-layout{height:calc(100vh - 122px);display:grid;grid-template-columns:255px minmax(0,1fr);gap:18px}
+.player-card,.game-stage{border:1px solid rgba(255,255,255,.13);background:rgba(10,5,24,.75);backdrop-filter:blur(16px);box-shadow:0 25px 65px rgba(0,0,0,.40)}
+.player-card{border-radius:17px;padding:22px 18px}
+.player-avatar{width:72px;height:72px;margin:0 auto 12px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:linear-gradient(135deg,#ad55ff,#6030a0);font-size:30px;font-weight:900;box-shadow:0 0 30px rgba(173,85,255,.30)}
+.player-label{text-align:center;font-size:12px;font-weight:900;letter-spacing:2px}
+.player-id{margin-top:5px;text-align:center;color:#a99db8;font-size:10px}
+.player-stats{margin-top:20px;border-top:1px solid rgba(255,255,255,.08)}
+.stat-row{display:flex;justify-content:space-between;padding:11px 2px;border-bottom:1px solid rgba(255,255,255,.07);color:#bdb3c8;font-size:11px}
+.stat-row strong{color:#fff}
+.play-button{width:100%;height:47px;margin-top:19px;border:0;border-radius:10px;color:#fff;background:linear-gradient(135deg,#ad55ff,#7032b5);font-size:11px;font-weight:900;letter-spacing:1px;cursor:pointer;box-shadow:0 12px 30px rgba(112,46,184,.30)}
+.play-button:hover{transform:translateY(-1px)}
+.game-message{margin-top:11px;color:#998ea6;text-align:center;font-size:9px;line-height:1.4}
+.game-stage{position:relative;overflow:hidden;border-radius:17px;min-width:0}
+.game-placeholder{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;color:#a99db8;font-size:12px}
+.game-placeholder-logo{color:#fff;font-size:clamp(28px,4vw,58px);font-weight:900;letter-spacing:8px;text-shadow:0 0 30px rgba(173,91,255,.60)}
+.flash-content,.flash-content object,.flash-content embed{width:100%;height:100%}
+
+@media(max-width:960px){
+  .auth-shell{grid-template-columns:1fr;justify-items:start;padding:28px;overflow:auto}
+  .brand-side{display:none}
+  .auth-card{width:min(480px,100%);margin:auto}
+}
+@media(max-width:560px){
+  .auth-shell{padding:16px}
+  .auth-inner{padding:20px;min-height:0}
+  .signature{right:18px;bottom:13px;font-size:24px}
+  .version{left:15px;bottom:13px}
+}
+@media(max-width:800px){
+  .game-page{padding:12px;overflow:auto}
+  .game-layout{height:auto;grid-template-columns:1fr}
+  .game-stage{height:65vh}
+}
+
+/* ===== KAYIT PANELİ KOMPAKT AYAR ===== */
+#registerPanel.active {
+    padding-top: 18px;
+}
+
+#registerPanel .auth-heading {
+    margin-top: 5px;
+    font-size: 22px;
+}
+
+#registerPanel .auth-sub {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+}
+
+#registerPanel .field {
+    margin-bottom: 8px;
+}
+
+#registerPanel .field label {
+    margin-bottom: 5px;
+    font-size: 7px;
+}
+
+#registerPanel .field input {
+    height: 47px;
+    border-radius: 12px;
+}
+
+#registerPanel .captcha-card {
+    margin: 1px 0 8px;
+    padding: 7px;
+    border-radius: 12px;
+}
+
+#registerPanel .captcha-top {
+    margin-bottom: 5px;
+}
+
+#registerPanel .captcha-image {
+    min-height: 48px;
+    border-radius: 9px;
+}
+
+#registerPanel .captcha-image img {
+    height: 48px;
+}
+
+#registerPanel .primary {
+    height: 49px;
+    margin-top: 2px;
+}
+
+.auth-card.register-compact .auth-inner {
+    min-height: 0;
+    padding: 24px;
+}
+
+.auth-card.register-compact {
+    width: min(450px, 100%);
+}
+
+@media (max-height: 860px) {
+    .auth-card.register-compact .auth-inner {
+        padding: 20px 22px;
+    }
+
+    #registerPanel.active {
+        padding-top: 14px;
+    }
+
+    #registerPanel .auth-sub {
+        margin-bottom: 11px;
+    }
+
+    #registerPanel .field input {
+        height: 44px;
+    }
+
+    #registerPanel .captcha-image,
+    #registerPanel .captcha-image img {
+        min-height: 44px;
+        height: 44px;
+    }
+
+    #registerPanel .primary {
+        height: 46px;
+    }
+}
+
+
+/* ============================================================
+   OYUN MODU — SWF ÜST/ALT KIRPILMASINI ENGELLE
+============================================================ */
+.game-page.game-running {
+    padding: 6px 10px 8px;
+}
+
+.game-page.game-running .game-topbar {
+    height: 32px;
+}
+
+.game-page.game-running .game-brand {
+    font-size: 16px;
+    letter-spacing: 2px;
+}
+
+.game-page.game-running .game-tag {
+    display: none;
+}
+
+.game-page.game-running .logout-button {
+    padding: 6px 11px;
+    border-radius: 8px;
+    font-size: 8px;
+}
+
+.game-page.game-running .game-layout {
+    height: calc(100vh - 46px);
+    grid-template-columns: 230px minmax(0, 1fr);
+    gap: 10px;
+}
+
+.game-page.game-running .player-card {
+    padding: 12px 14px;
+    border-radius: 12px;
+    overflow-y: auto;
+}
+
+.game-page.game-running .player-avatar {
+    width: 52px;
+    height: 52px;
+    margin-bottom: 7px;
+    font-size: 22px;
+}
+
+.game-page.game-running .player-stats {
+    margin-top: 10px;
+}
+
+.game-page.game-running .stat-row {
+    padding: 7px 2px;
+    font-size: 9px;
+}
+
+.game-page.game-running .play-button {
+    height: 38px;
+    margin-top: 10px;
+    font-size: 9px;
+}
+
+.game-page.game-running .game-message {
+    margin-top: 6px;
+    font-size: 8px;
+}
+
+.game-page.game-running .game-stage {
+    height: 100%;
+    min-height: 0;
+    border-radius: 12px;
+}
+
+.game-page.game-running .flash-content,
+.game-page.game-running .flash-content object,
+.game-page.game-running .flash-content embed {
+    display: block;
+    width: 100% !important;
+    height: 100% !important;
+    margin: 0 auto;
+}
+
+
+/* ============================================================
+   AVATAR LIFE #2017 — MODERN OYUNCU PANELİ
+   Sağ oyun alanının SWF davranışı değiştirilmez.
+============================================================ */
+.game-layout {
+    grid-template-columns: 310px minmax(0,1fr);
+    gap: 16px;
+}
+
+.player-card {
+    position: relative;
+    overflow: hidden;
+    padding: 22px 18px 18px;
+    border-radius: 20px;
+    border: 1px solid rgba(196,126,255,.20);
+    background:
+        radial-gradient(circle at 50% 0%, rgba(168,72,255,.14), transparent 30%),
+        linear-gradient(165deg, rgba(16,7,31,.94), rgba(7,3,18,.92));
+    box-shadow: 0 26px 70px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.04);
+}
+
+.player-card::before {
+    content:"";
+    position:absolute;
+    left:18%; right:18%; top:0;
+    height:1px;
+    background:linear-gradient(90deg,transparent,#c77dff,transparent);
+    opacity:.8;
+}
+
+.player-profile {
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    text-align:center;
+}
+
+.player-avatar-wrap {
+    position:relative;
+    width:92px;
+    height:92px;
+    padding:4px;
+    border-radius:28px;
+    background:linear-gradient(145deg,#d187ff,#7a32cf);
+    box-shadow:0 15px 38px rgba(124,47,210,.30),0 0 28px rgba(184,83,255,.15);
+}
+
+.player-avatar {
+    width:100%;
+    height:100%;
+    margin:0;
+    border-radius:24px;
+    background:linear-gradient(145deg,#8d3ee0,#54208e);
+    border:1px solid rgba(255,255,255,.12);
+    font-size:34px;
+    font-weight:950;
+}
+
+.online-dot {
+    position:absolute;
+    right:-2px;
+    bottom:7px;
+    width:17px;
+    height:17px;
+    border:4px solid #100720;
+    border-radius:50%;
+    background:#55e995;
+    box-shadow:0 0 14px rgba(85,233,149,.65);
+}
+
+.player-status {
+    margin-top:12px;
+    color:#66e9a0;
+    font-size:7px;
+    font-weight:900;
+    letter-spacing:2px;
+}
+
+.player-email {
+    width:100%;
+    margin-top:7px;
+    padding:0 6px;
+    overflow:hidden;
+    color:#fff;
+    font-size:13px;
+    font-weight:900;
+    line-height:1.35;
+    text-overflow:ellipsis;
+    white-space:nowrap;
+}
+
+.player-id {
+    display:inline-flex;
+    align-items:center;
+    gap:5px;
+    margin-top:8px;
+    padding:6px 10px;
+    border-radius:999px;
+    border:1px solid rgba(255,255,255,.07);
+    background:rgba(255,255,255,.025);
+    color:#82768f;
+    font-size:7px;
+    font-weight:800;
+    letter-spacing:1.2px;
+}
+
+.player-id strong { color:#c891ff; }
+
+.player-divider {
+    height:1px;
+    margin:19px 0 15px;
+    background:linear-gradient(90deg,transparent,rgba(255,255,255,.10),transparent);
+}
+
+.player-section-title {
+    margin:0 2px 9px;
+    color:#746a80;
+    font-size:7px;
+    font-weight:900;
+    letter-spacing:1.8px;
+}
+
+.modern-stats {
+    display:grid;
+    grid-template-columns:1fr 1fr;
+    gap:8px;
+}
+
+.modern-stat {
+    min-width:0;
+    min-height:68px;
+    display:flex;
+    align-items:center;
+    gap:9px;
+    padding:10px;
+    border:1px solid rgba(255,255,255,.065);
+    border-radius:13px;
+    background:rgba(255,255,255,.025);
+    transition:.2s ease;
+}
+
+.modern-stat:hover {
+    transform:translateY(-1px);
+    border-color:rgba(190,111,255,.20);
+    background:rgba(170,75,255,.045);
+}
+
+.stat-icon {
+    flex:0 0 31px;
+    width:31px;
+    height:31px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:9px;
+    background:linear-gradient(145deg,rgba(184,83,255,.18),rgba(108,43,188,.09));
+    color:#c780ff;
+    font-size:13px;
+}
+
+.stat-copy {
+    min-width:0;
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+}
+
+.stat-copy span {
+    color:#756b80;
+    font-size:6px;
+    font-weight:900;
+    letter-spacing:1px;
+}
+
+.stat-copy strong {
+    max-width:82px;
+    overflow:hidden;
+    color:#f8f4fb;
+    font-size:11px;
+    text-overflow:ellipsis;
+}
+
+.player-actions {
+    margin-top:15px;
+}
+
+.play-button {
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:9px;
+    height:50px;
+    margin-top:0;
+    border-radius:13px;
+    background:linear-gradient(115deg,#b64cff,#8434dd 52%,#6329b2);
+    box-shadow:0 15px 34px rgba(107,39,181,.30),inset 0 1px 0 rgba(255,255,255,.15);
+    transition:.2s ease;
+}
+
+.play-button:hover {
+    transform:translateY(-2px);
+    box-shadow:0 19px 42px rgba(116,42,196,.40),0 0 24px rgba(182,76,255,.10);
+}
+
+.play-symbol {
+    width:24px;
+    height:24px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    border-radius:7px;
+    background:rgba(255,255,255,.10);
+    font-size:8px;
+}
+
+.game-message {
+    margin-top:9px;
+    color:#786e84;
+    font-size:8px;
+}
+
+/* Oyun açıldıktan sonra da panel modern kalır ama SWF'ye alan bırakır */
+.game-page.game-running .game-layout {
+    grid-template-columns: 275px minmax(0,1fr);
+    gap:10px;
+}
+
+.game-page.game-running .player-card {
+    padding:12px 12px 10px;
+}
+
+.game-page.game-running .player-avatar-wrap {
+    width:60px;
+    height:60px;
+    border-radius:18px;
+    padding:3px;
+}
+
+.game-page.game-running .player-avatar {
+    border-radius:15px;
+    font-size:23px;
+}
+
+.game-page.game-running .online-dot {
+    width:13px;
+    height:13px;
+    border-width:3px;
+}
+
+.game-page.game-running .player-status {
+    margin-top:7px;
+}
+
+.game-page.game-running .player-email {
+    margin-top:4px;
+    font-size:10px;
+}
+
+.game-page.game-running .player-id {
+    margin-top:5px;
+    padding:4px 8px;
+}
+
+.game-page.game-running .player-divider {
+    margin:9px 0 8px;
+}
+
+.game-page.game-running .player-section-title {
+    margin-bottom:6px;
+}
+
+.game-page.game-running .modern-stats {
+    gap:5px;
+}
+
+.game-page.game-running .modern-stat {
+    min-height:46px;
+    padding:6px;
+    border-radius:9px;
+}
+
+.game-page.game-running .stat-icon {
+    flex-basis:24px;
+    width:24px;
+    height:24px;
+    border-radius:7px;
+    font-size:10px;
+}
+
+.game-page.game-running .stat-copy strong {
+    font-size:9px;
+}
+
+.game-page.game-running .player-actions {
+    margin-top:8px;
+}
+
+.game-page.game-running .play-button {
+    height:36px;
+    font-size:8px;
+}
+
+.game-page.game-running .game-message {
+    margin-top:5px;
+    font-size:7px;
+}
+
+@media(max-width:1050px) {
+    .game-layout { grid-template-columns:270px minmax(0,1fr); }
+    .game-page.game-running .game-layout { grid-template-columns:235px minmax(0,1fr); }
+}
+
+
+/* ===== OYUN ALT BOŞLUK DÜZELTMESİ ===== */
+.game-page.game-running {
+    padding-bottom: 0 !important;
+}
+
+.game-page.game-running .game-layout {
+    height: calc(100vh - 38px) !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
+
+.game-page.game-running .game-stage {
+    height: 100% !important;
+    min-height: 0 !important;
+    margin-bottom: 0 !important;
+    border-bottom-left-radius: 10px;
+    border-bottom-right-radius: 10px;
+}
+
+.game-page.game-running .flash-content,
+.game-page.game-running .flash-content object,
+.game-page.game-running .flash-content embed {
+    height: 100% !important;
+    min-height: 100% !important;
+    margin-bottom: 0 !important;
+}
+
+
+/* ===== DELUXE OYUNCU PANELİ ===== */
+.game-layout{grid-template-columns:340px minmax(0,1fr)!important;gap:14px!important}
+.player-card{padding:24px 20px 20px!important;background:radial-gradient(circle at 50% -8%,rgba(180,75,255,.22),transparent 31%),linear-gradient(165deg,rgba(17,7,34,.98),rgba(7,3,18,.97))!important}
+.player-avatar-wrap{width:104px!important;height:104px!important;border-radius:31px!important;box-shadow:0 18px 46px rgba(135,52,220,.35),0 0 35px rgba(190,90,255,.13)!important}
+.player-avatar{border-radius:27px!important;font-size:39px!important}
+.player-email{font-size:14px!important;margin-top:9px!important}
+.modern-stat{min-height:74px!important;padding:12px!important}
+.stat-icon{flex-basis:35px!important;width:35px!important;height:35px!important}
+.stat-copy strong{font-size:12px!important}
+.panel-extras{margin-top:14px}
+.comfort-card{display:flex;align-items:center;gap:11px;padding:12px;border:1px solid rgba(201,129,255,.12);border-radius:14px;background:linear-gradient(110deg,rgba(164,70,236,.09),rgba(255,255,255,.018))}
+.comfort-icon{flex:0 0 38px;width:38px;height:38px;display:flex;align-items:center;justify-content:center;border-radius:11px;color:#e0adff;font-size:18px;background:linear-gradient(145deg,rgba(190,87,255,.20),rgba(92,34,157,.12))}
+.comfort-card span,.comfort-card strong{display:block}.comfort-card span{color:#766a82;font-size:6px;font-weight:900;letter-spacing:1.6px}.comfort-card strong{margin-top:4px;color:#f3e8fa;font-size:9px;letter-spacing:.7px}
+.quick-info{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:8px}.quick-info>div{padding:9px 5px;text-align:center;border:1px solid rgba(255,255,255,.055);border-radius:11px;background:rgba(255,255,255,.022)}
+.quick-info span,.quick-info strong,.quick-info small{display:block}.quick-info span{margin-bottom:4px;color:#b968f2;font-size:10px}.quick-info strong{color:#ddd2e5;font-size:6px;letter-spacing:.7px}.quick-info small{margin-top:3px;color:#756b80;font-size:6px}
+.panel-note{display:flex;gap:8px;align-items:flex-start;margin-top:8px;padding:10px;border-radius:11px;background:rgba(255,255,255,.018);border:1px solid rgba(255,255,255,.045)}
+.note-icon{flex:0 0 19px;width:19px;height:19px;display:flex;align-items:center;justify-content:center;border-radius:6px;background:rgba(184,83,255,.12);color:#c986f5;font-size:8px;font-weight:900}
+.panel-note p{margin:0;color:#716778;font-size:7px;line-height:1.55}
+.play-button.logout-mode{background:linear-gradient(115deg,#6f263d,#a32f52 55%,#6c2039)!important;box-shadow:0 15px 34px rgba(145,36,70,.22),inset 0 1px 0 rgba(255,255,255,.10)!important}
+.game-page.game-running .game-layout{grid-template-columns:320px minmax(0,1fr)!important;gap:10px!important}
+.game-page.game-running .player-card{padding:12px 14px 10px!important}
+.game-page.game-running .player-avatar-wrap{width:64px!important;height:64px!important}
+.game-page.game-running .player-email{font-size:10px!important}
+.game-page.game-running .modern-stat{min-height:48px!important}
+.game-page.game-running .panel-extras{margin-top:7px}.game-page.game-running .comfort-card{padding:7px 9px}.game-page.game-running .comfort-icon{flex-basis:27px;width:27px;height:27px;font-size:12px}
+.game-page.game-running .quick-info{margin-top:5px;gap:4px}.game-page.game-running .quick-info>div{padding:5px 3px}.game-page.game-running .quick-info span{margin-bottom:2px;font-size:8px}
+.game-page.game-running .panel-note{margin-top:5px;padding:6px 7px}.game-page.game-running .panel-note p{font-size:6px;line-height:1.35}
+.game-page.game-running .player-actions{margin-top:6px}.game-page.game-running .play-button{height:38px}
+@media(max-width:1150px){.game-layout{grid-template-columns:300px minmax(0,1fr)!important}.game-page.game-running .game-layout{grid-template-columns:280px minmax(0,1fr)!important}}
+
+
+/* ===== TEMİZ / GERÇEK VERİ OYUNCU PANELİ ===== */
+.panel-extras { display:none !important; }
+
+.player-card {
+    display:flex !important;
+    flex-direction:column !important;
+    height:100% !important;
+    min-height:0 !important;
+    overflow:hidden !important;
+}
+
+.player-profile,
+.player-divider,
+.player-section-title,
+.modern-stats {
+    flex:0 0 auto;
+}
+
+.player-actions {
+    flex:0 0 auto;
+    margin-top:auto !important;
+    padding-top:14px;
+    position:sticky;
+    bottom:0;
+    z-index:5;
+    background:linear-gradient(180deg,rgba(9,4,20,0),rgba(9,4,20,.96) 24%);
+}
+
+.play-button {
+    display:flex !important;
+    width:100% !important;
+    min-height:48px !important;
+    align-items:center !important;
+    justify-content:center !important;
+    gap:9px !important;
+    visibility:visible !important;
+    opacity:1 !important;
+}
+
+#playButtonIcon {
+    display:inline-flex;
+    width:24px;
+    height:24px;
+    align-items:center;
+    justify-content:center;
+    border-radius:7px;
+    background:rgba(255,255,255,.10);
+    font-size:9px;
+}
+
+#playButtonLabel {
+    font-weight:900;
+    letter-spacing:1px;
+}
+
+.game-page.game-running .player-card {
+    overflow:hidden !important;
+}
+
+.game-page.game-running .player-actions {
+    margin-top:auto !important;
+    padding-top:8px;
+}
+
+.game-page.game-running .play-button {
+    min-height:40px !important;
+    height:40px !important;
+}
+
+.game-page.game-running .modern-stats {
+    margin-bottom:0 !important;
+}
+
+/* Mevcut backend'den gelen gerçek alanlar:
+   e-posta, ID, seviye, gümüş, altın, enerji. */
+
+
+/* ===== BENİ HATIRLA ===== */
+.remember-row{margin:12px 2px 15px}
+.remember-label{display:flex;align-items:center;gap:10px;width:max-content;max-width:100%;cursor:pointer;user-select:none}
+.remember-label input{position:absolute;opacity:0;pointer-events:none}
+.remember-check{width:22px;height:22px;display:flex;align-items:center;justify-content:center;border:1px solid rgba(197,119,255,.24);border-radius:7px;background:rgba(255,255,255,.025);color:transparent;font-size:11px;font-weight:900;transition:.18s ease}
+.remember-label input:checked+.remember-check{color:#fff;border-color:rgba(195,104,255,.75);background:linear-gradient(135deg,#b348f4,#7330c6);box-shadow:0 0 18px rgba(168,70,239,.22)}
+.remember-copy{display:flex;flex-direction:column;gap:2px}
+.remember-copy strong{color:#d9cfdf;font-size:9px;font-weight:800;letter-spacing:.45px}
+.remember-copy small{color:#716779;font-size:7px}
+
+
+/* ===== LOGIN / REGISTER BANNER FIX =====
+   Sadece giriş-kayıt ekranında uygulanır.
+   Logged-in oyun ekranına/SWF alanına dokunmaz.
+*/
+{% if not logged_in %}
+html, body {
+    min-height: 100%;
+}
+
+body {
+    position: relative;
+    background:
+        linear-gradient(90deg,
+            rgba(7,2,17,.84) 0%,
+            rgba(7,2,17,.72) 42%,
+            rgba(7,2,17,.82) 100%),
+        linear-gradient(180deg,
+            rgba(10,3,23,.30),
+            rgba(7,2,17,.72)),
+        url("/files/avatar-life-banner.png") center center / cover no-repeat fixed !important;
+}
+
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background:
+        radial-gradient(circle at 20% 45%, rgba(161,62,235,.11), transparent 34%),
+        radial-gradient(circle at 75% 35%, rgba(101,42,184,.08), transparent 30%);
+}
+{% endif %}
+
+
+/* ===== TAM EKRAN OYUN MODU ===== */
+{% if logged_in %}
+.avataria-bg,.scene-shade,.scene-light{display:none!important}
+html,body{width:100%!important;height:100%!important;margin:0!important;padding:0!important;overflow:hidden!important;background:#000!important}
+.game-page.fullscreen-game-page{position:fixed!important;inset:0!important;z-index:20!important;width:100vw!important;height:100vh!important;padding:0!important;margin:0!important;overflow:hidden!important;background:#000!important}
+.fullscreen-game-stage{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;min-width:0!important;min-height:0!important;margin:0!important;padding:0!important;border:0!important;border-radius:0!important;background:#000!important;box-shadow:none!important;overflow:hidden!important}
+.fullscreen-game-stage .flash-content,.fullscreen-game-stage .flash-content object,.fullscreen-game-stage .flash-content embed{display:block!important;width:100%!important;height:100%!important;min-width:100%!important;min-height:100%!important;margin:0!important;padding:0!important;border:0!important}
+.fullscreen-logout{
+    position:fixed!important;left:18px!important;bottom:118px!important;top:auto!important;right:auto!important;z-index:999999!important;
+    height:44px!important;min-width:44px!important;padding:0 14px 0 11px!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:9px!important;
+    border:1px solid rgba(255,255,255,.16)!important;border-radius:13px!important;
+    background:linear-gradient(135deg,rgba(18,23,31,.94),rgba(8,12,18,.90))!important;color:rgba(255,255,255,.90)!important;text-decoration:none!important;
+    font-size:9px!important;font-weight:900!important;letter-spacing:1.35px!important;backdrop-filter:blur(14px) saturate(135%)!important;
+    box-shadow:0 10px 28px rgba(0,0,0,.38),inset 0 1px 0 rgba(255,255,255,.08)!important;
+    transition:transform .22s ease,border-color .22s ease,background .22s ease,box-shadow .22s ease!important;
+    animation:logoutFloat 3.2s ease-in-out infinite!important;
+}
+.fullscreen-logout .logout-icon{width:21px;height:21px;display:flex;align-items:center;justify-content:center;flex:0 0 21px;transition:transform .25s ease}
+.fullscreen-logout .logout-icon svg{display:block;width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
+.fullscreen-logout .logout-text{white-space:nowrap}
+.fullscreen-logout::after{content:"";position:absolute;inset:-1px;border-radius:13px;pointer-events:none;opacity:0;box-shadow:0 0 0 1px rgba(255,82,110,.22),0 0 22px rgba(255,54,91,.22);transition:opacity .22s ease}
+.fullscreen-logout:hover{color:#fff!important;border-color:rgba(255,99,124,.52)!important;background:linear-gradient(135deg,rgba(111,27,48,.96),rgba(63,17,31,.94))!important;box-shadow:0 13px 34px rgba(0,0,0,.44),0 0 24px rgba(225,45,78,.14)!important;transform:translateY(-3px) scale(1.02)!important;animation-play-state:paused!important}
+.fullscreen-logout:hover::after{opacity:1}
+.fullscreen-logout:hover .logout-icon{transform:translateX(2px)}
+.fullscreen-logout:active{transform:translateY(-1px) scale(.98)!important}
+@keyframes logoutFloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-3px)}}
+@media(max-width:700px){.fullscreen-logout{left:10px!important;bottom:104px!important;height:40px!important;padding:0 11px!important}.fullscreen-logout .logout-text{display:none}}
+{% endif %}
+
+/* ===== AVATAR LIFE GÖREV PANELİ ===== */
+.quest-fab{
+    position:fixed;right:20px;top:50%;bottom:auto;transform:translateY(-50%);
+    z-index:10020;min-width:205px;height:72px;padding:0 20px 0 18px;
+    display:flex;align-items:center;justify-content:flex-start;gap:12px;
+    border:2px solid rgba(255,214,79,.82);border-radius:18px;color:#fff;
+    background:linear-gradient(135deg,#9e3cff 0%,#7023c8 55%,#50178e 100%);
+    font-size:13px;font-weight:950;letter-spacing:1.2px;cursor:pointer;
+    box-shadow:0 15px 45px rgba(99,31,166,.58),0 0 0 1px rgba(255,255,255,.10) inset,
+               0 0 26px rgba(255,210,73,.22);
+    backdrop-filter:blur(12px);opacity:.78;
+    animation:questAttention 2.4s ease-in-out infinite;
+    transition:.18s filter,.18s box-shadow,.18s transform
+}
+.quest-fab:hover{
+    transform:translateY(-50%) scale(1.055);
+    filter:brightness(1.10);opacity:1;
+    box-shadow:0 18px 55px rgba(99,31,166,.68),0 0 34px rgba(255,211,75,.45)
+}
+.quest-fab-icon{
+    width:42px;height:42px;display:flex;align-items:center;justify-content:center;
+    flex:0 0 42px;border-radius:13px;background:rgba(255,255,255,.13);
+    box-shadow:inset 0 1px rgba(255,255,255,.18);font-size:21px
+}
+.quest-fab-copy{display:flex;flex-direction:column;align-items:flex-start;line-height:1.05}
+.quest-fab-title{font-size:13px;font-weight:1000;letter-spacing:1.4px}
+.quest-fab-ready{
+    display:none;margin-top:7px;color:#ffe56f;font-size:9px;font-weight:1000;
+    letter-spacing:.75px;text-shadow:0 0 10px rgba(255,218,68,.55)
+}
+.quest-fab-ready.show{display:block}
+.quest-fab .quest-fab-badge{
+    display:none;position:absolute;right:-9px;top:-10px;min-width:30px;height:30px;
+    padding:0 8px;align-items:center;justify-content:center;border:3px solid #fff;
+    border-radius:999px;background:linear-gradient(180deg,#ffdf4f,#ffad18);
+    color:#482600;font-size:12px;font-weight:1000;
+    box-shadow:0 0 0 4px rgba(255,191,35,.16),0 0 24px rgba(255,194,31,.85);
+    animation:questBadgeGlow 1.15s ease-in-out infinite
+}
+.quest-fab .quest-fab-badge.show{display:flex}
+@keyframes questAttention{
+    0%,100%{box-shadow:0 15px 45px rgba(99,31,166,.58),0 0 0 1px rgba(255,255,255,.10) inset,0 0 18px rgba(255,210,73,.16)}
+    50%{box-shadow:0 15px 48px rgba(99,31,166,.64),0 0 0 1px rgba(255,255,255,.12) inset,0 0 32px rgba(255,210,73,.34)}
+}
+@keyframes questBadgeGlow{
+    0%,100%{transform:scale(1);box-shadow:0 0 0 4px rgba(255,191,35,.14),0 0 18px rgba(255,194,31,.62)}
+    50%{transform:scale(1.12);box-shadow:0 0 0 7px rgba(255,191,35,.10),0 0 31px rgba(255,194,31,1)}
+}
+
+
+.quest-promo{
+    position:fixed;right:20px;top:calc(50% + 48px);z-index:10019;
+    width:205px;padding:10px 12px;border-radius:12px;
+    border:1px solid rgba(255,205,61,.30);
+    background:rgba(28,12,46,.76);backdrop-filter:blur(9px);
+    color:#e8dff0;font-size:9px;line-height:1.45;text-align:center;
+    box-shadow:0 10px 30px rgba(0,0,0,.22);transition:.2s opacity,.2s transform
+}
+.quest-promo strong{color:#ffe06b;letter-spacing:.8px}
+.quest-hide{
+    position:absolute;left:-11px;top:-11px;width:25px;height:25px;border-radius:50%;
+    border:2px solid rgba(255,255,255,.78);background:#3b185d;color:#fff;
+    font-size:12px;font-weight:900;cursor:pointer;display:flex;align-items:center;
+    justify-content:center;box-shadow:0 4px 15px rgba(0,0,0,.35);z-index:2
+}
+.quest-hide:hover{background:#5b248c}
+.quest-dock{
+    display:none;position:fixed;right:0;top:50%;transform:translateY(-50%);
+    z-index:10020;width:48px;height:70px;border:1px solid rgba(255,207,62,.62);
+    border-right:0;border-radius:15px 0 0 15px;background:rgba(101,31,171,.72);
+    backdrop-filter:blur(10px);color:#fff;font-size:21px;cursor:pointer;
+    box-shadow:0 10px 28px rgba(78,25,128,.35);
+    animation:questDockGlow 2.2s ease-in-out infinite
+}
+.quest-dock:hover{background:rgba(126,42,207,.92)}
+body.quest-ui-hidden .quest-fab,
+body.quest-ui-hidden .quest-promo{display:none}
+body.quest-ui-hidden .quest-dock{display:block}
+@keyframes questDockGlow{
+    0%,100%{box-shadow:0 10px 28px rgba(78,25,128,.30)}
+    50%{box-shadow:0 10px 34px rgba(78,25,128,.46),0 0 18px rgba(255,205,49,.30)}
+}
+@media(max-width:650px){
+    .quest-promo{right:9px;top:calc(50% + 38px);width:164px;font-size:7px}
+}
+
+.quest-overlay{
+    display:none;position:fixed;inset:0;z-index:10030;align-items:center;justify-content:center;
+    padding:18px;background:rgba(5,2,13,.64);backdrop-filter:blur(7px)
+}
+.quest-overlay.open{display:flex}
+.quest-window{
+    width:min(760px,94vw);max-height:min(720px,88vh);overflow:hidden;border-radius:22px;
+    border:1px solid rgba(222,181,255,.28);
+    background:linear-gradient(180deg,rgba(30,13,50,.98),rgba(13,7,27,.98));
+    box-shadow:0 35px 100px rgba(0,0,0,.65),0 0 50px rgba(165,74,255,.12)
+}
+.quest-head{display:flex;align-items:center;justify-content:space-between;padding:19px 22px 14px;border-bottom:1px solid rgba(255,255,255,.08)}
+.quest-title-wrap strong{display:block;font-size:20px;letter-spacing:2px}
+.quest-title-wrap span{display:block;margin-top:4px;color:#a99bb8;font-size:9px;letter-spacing:1.2px}
+.quest-close{width:38px;height:38px;border:0;border-radius:11px;color:#d9cde4;background:rgba(255,255,255,.06);font-size:18px;cursor:pointer}
+.quest-close:hover{background:rgba(255,255,255,.11);color:#fff}
+.quest-tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;padding:13px 16px 0}
+.quest-tab{height:42px;border:1px solid rgba(255,255,255,.08);border-radius:11px;color:#9f93ac;background:rgba(255,255,255,.035);font-size:9px;font-weight:950;letter-spacing:1.3px;cursor:pointer}
+.quest-tab.active{color:#fff;border-color:rgba(192,120,255,.46);background:linear-gradient(135deg,rgba(172,73,255,.32),rgba(105,44,190,.24));box-shadow:inset 0 1px rgba(255,255,255,.08)}
+.quest-list{height:min(525px,64vh);overflow:auto;padding:14px 16px 18px}
+.quest-list::-webkit-scrollbar{width:7px}.quest-list::-webkit-scrollbar-thumb{background:rgba(194,121,255,.30);border-radius:10px}
+.quest-card{margin-bottom:10px;padding:15px;border:1px solid rgba(255,255,255,.085);border-radius:15px;background:rgba(255,255,255,.035)}
+.quest-card.claimed{opacity:.68}
+.quest-card-top{display:flex;gap:14px;align-items:flex-start;justify-content:space-between}
+.quest-name{font-size:13px;font-weight:900;color:#fff}
+.quest-state{margin-top:5px;color:#9f93aa;font-size:9px}
+.quest-progress-row{display:flex;align-items:center;gap:10px;margin-top:12px}
+.quest-progress{height:9px;flex:1;overflow:hidden;border-radius:999px;background:rgba(255,255,255,.07)}
+.quest-progress>i{display:block;height:100%;border-radius:inherit;background:linear-gradient(90deg,#8f3ee1,#d274ff);box-shadow:0 0 14px rgba(194,100,255,.45)}
+.quest-count{min-width:48px;text-align:right;color:#d7cce0;font-size:9px;font-weight:900}
+.quest-bottom{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-top:13px}
+.quest-reward{display:flex;gap:7px;flex-wrap:wrap}
+.quest-reward span{padding:6px 8px;border-radius:8px;background:rgba(255,255,255,.055);color:#d8cce3;font-size:9px;font-weight:800}
+.quest-reward .gold{color:#ffd85e}.quest-reward .silver{color:#e4e8ef}.quest-reward .energy{color:#7effbc}
+.quest-claim{min-width:118px;height:36px;padding:0 12px;border:0;border-radius:10px;color:#fff;background:linear-gradient(135deg,#aa4cff,#7433c7);font-size:8px;font-weight:950;letter-spacing:.8px;cursor:pointer}
+.quest-claim:hover:not(:disabled){filter:brightness(1.09);transform:translateY(-1px)}
+.quest-claim:disabled{cursor:default;color:#94889f;background:rgba(255,255,255,.07)}
+.quest-claim.ready{box-shadow:0 0 20px rgba(173,79,255,.23)}
+.quest-empty,.quest-loading{padding:55px 20px;text-align:center;color:#a79aac;font-size:11px}
+.quest-toast{display:none;margin:0 16px 14px;padding:10px 12px;border-radius:10px;text-align:center;font-size:9px}
+.quest-toast.show{display:block}.quest-toast.success{color:#caffdc;background:rgba(35,163,91,.14)}.quest-toast.error{color:#ffc4d0;background:rgba(190,48,80,.14)}
+@media(max-width:650px){
+    .quest-fab{right:9px;top:50%;bottom:auto;min-width:164px;height:60px;padding:0 12px;gap:9px}.quest-fab-icon{width:35px;height:35px;flex-basis:35px;font-size:17px}.quest-fab-title{font-size:10px}.quest-fab-ready{font-size:7px}
+    .quest-overlay{padding:8px}.quest-window{width:100%;max-height:94vh;border-radius:16px}
+    .quest-bottom{align-items:stretch;flex-direction:column}.quest-claim{width:100%}
+}
+
+
+/* ===== AVATARIA LIFE #2017 QUEST UI v1.5 ===== */
+.quest-fab{
+ width:232px!important;min-height:82px!important;right:22px!important;top:50%!important;bottom:auto!important;
+ padding:12px 18px 12px 14px!important;gap:13px!important;border-radius:22px!important;
+ border:1px solid rgba(255,213,80,.72)!important;
+ background:linear-gradient(135deg,rgba(39,16,71,.95),rgba(105,38,181,.95) 58%,rgba(66,21,121,.97))!important;
+ box-shadow:0 18px 48px rgba(37,10,70,.50),0 0 30px rgba(255,201,54,.22),inset 0 1px rgba(255,255,255,.18)!important;
+ opacity:.88!important;overflow:visible!important;animation:alQuestPulse 2.8s ease-in-out infinite!important
+}
+.quest-fab:hover{opacity:1!important;transform:translateY(-50%) scale(1.045)!important;filter:brightness(1.08)!important}
+.quest-fab-icon{
+ width:52px!important;height:52px!important;flex:0 0 52px!important;border-radius:17px!important;
+ background:linear-gradient(145deg,#ffe069,#f2ab22)!important;color:#3d205e!important;
+ box-shadow:0 8px 20px rgba(255,185,36,.30),inset 0 1px rgba(255,255,255,.65)!important;
+ font-size:0!important;position:relative!important
+}
+.quest-fab-icon:after{content:"✓";font-size:27px;font-weight:1000;color:#4c216d}
+.quest-fab-title{font-size:15px!important;letter-spacing:1.5px!important}
+.quest-fab-sub{display:block;margin-top:5px;font-size:8px;font-weight:900;color:#d7c9e7;letter-spacing:.6px}
+.quest-promo{width:232px!important;right:22px!important;top:calc(50% + 54px)!important;border-radius:13px!important;
+ background:rgba(24,10,42,.80)!important;border:1px solid rgba(255,213,80,.24)!important}
+.quest-overlay{background:rgba(8,5,16,.58)!important;backdrop-filter:blur(6px)!important;align-items:center!important;justify-content:center!important}
+.quest-window{
+ width:min(980px,94vw)!important;max-height:91vh!important;border-radius:28px!important;overflow:hidden!important;
+ border:1px solid rgba(190,127,255,.38)!important;background:linear-gradient(180deg,#170a28,#100719)!important;
+ box-shadow:0 32px 90px rgba(0,0,0,.60),0 0 0 1px rgba(255,255,255,.04) inset!important
+}
+.quest-header{
+ min-height:148px!important;padding:25px 30px 22px!important;position:relative!important;overflow:hidden!important;
+ background:radial-gradient(circle at 82% 18%,rgba(255,213,66,.23),transparent 22%),
+ radial-gradient(circle at 72% 85%,rgba(181,83,255,.34),transparent 32%),
+ linear-gradient(118deg,#35105c,#6722a9 48%,#241041)!important;
+ border-bottom:1px solid rgba(255,255,255,.10)!important
+}
+.quest-header:before{content:"AVATARIA LIFE #2017";display:block;color:#ffd85a;font-size:10px;font-weight:1000;letter-spacing:2.4px;margin-bottom:7px}
+.quest-header:after{content:"★ GÜNLÜK & HAFTALIK ÖDÜLLER";position:absolute;right:34px;bottom:22px;padding:10px 14px;
+ border:1px solid rgba(255,220,91,.42);border-radius:13px;background:rgba(20,8,34,.55);color:#ffe06b;
+ font-size:10px;font-weight:1000;letter-spacing:.8px}
+.quest-header h2{font-size:30px!important;line-height:1!important;margin:0 0 7px!important}
+.quest-header p{color:#d9cce8!important}
+.quest-close{width:44px!important;height:44px!important;border-radius:14px!important;background:rgba(16,7,29,.52)!important}
+.quest-tabs{gap:9px!important;padding:18px 20px 0!important}
+.quest-tab{height:53px!important;border-radius:15px!important;background:#21122f!important;border:1px solid rgba(255,255,255,.09)!important}
+.quest-tab.active{border-color:#ffd348!important;background:linear-gradient(135deg,#5d2391,#7e31bb)!important;
+ box-shadow:0 8px 20px rgba(91,31,142,.22)!important}
+.quest-error{margin:10px 20px 0!important;border-radius:12px!important}
+.quest-list{padding:18px 20px 20px!important;gap:12px!important}
+.quest-card{border-radius:19px!important;padding:19px!important;background:linear-gradient(135deg,rgba(35,20,49,.96),rgba(27,14,39,.96))!important;
+ border:1px solid rgba(255,255,255,.09)!important}
+.quest-card:hover{border-color:rgba(176,100,235,.32)!important}
+.quest-progress{height:11px!important;border-radius:99px!important;background:#30243a!important}
+.quest-progress span{background:linear-gradient(90deg,#7431c4,#b95ee5)!important;box-shadow:0 0 16px rgba(177,83,226,.28)!important}
+.quest-reward{border-radius:10px!important;padding:7px 10px!important}
+.quest-claim{height:45px!important;border-radius:13px!important}
+.quest-claim.ready{color:#432700!important;background:linear-gradient(180deg,#ffe46a,#ffbd2f)!important;
+ box-shadow:0 8px 22px rgba(255,185,42,.20)!important}
+@keyframes alQuestPulse{
+ 0%,100%{box-shadow:0 18px 48px rgba(37,10,70,.50),0 0 22px rgba(255,201,54,.15)}
+ 50%{box-shadow:0 18px 52px rgba(37,10,70,.56),0 0 36px rgba(255,201,54,.30)}
+}
+@media(max-width:650px){
+ .quest-fab{width:184px!important;min-height:68px!important;right:9px!important;padding:9px 12px!important}
+ .quest-fab-icon{width:42px!important;height:42px!important;flex-basis:42px!important}
+ .quest-fab-title{font-size:11px!important}.quest-fab-sub{font-size:7px!important}
+ .quest-promo{width:184px!important;right:9px!important;top:calc(50% + 45px)!important}
+ .quest-window{width:100%!important;max-height:95vh!important;border-radius:19px!important}
+ .quest-header{min-height:126px!important;padding:20px 18px!important}.quest-header h2{font-size:22px!important}
+ .quest-header:after{display:none}.quest-tabs{padding:12px 12px 0!important}.quest-list{padding:12px!important}
+}
+
+
+/* ==========================================================
+   AVATARIA LIFE #2017 — QUEST SYSTEM v1.6 LUXURY UI
+   VISUAL-ONLY OVERRIDE. Backend/API/quest logic untouched.
+   ========================================================== */
+:root{
+ --al-gold:#ffd45a;--al-gold2:#f2a91d;--al-cream:#fff4ca;
+ --al-purple:#8c39d7;--al-purple2:#522078;--al-ink:#100619;
+}
+.quest-fab{
+ width:258px!important;min-height:92px!important;right:24px!important;
+ padding:13px 20px 13px 14px!important;gap:14px!important;border-radius:25px!important;
+ border:1px solid rgba(255,218,94,.86)!important;
+ background:
+   radial-gradient(circle at 12% 15%,rgba(255,222,104,.18),transparent 24%),
+   linear-gradient(135deg,rgba(29,9,48,.97),rgba(102,30,163,.97) 56%,rgba(45,12,77,.98))!important;
+ box-shadow:0 22px 60px rgba(31,6,55,.58),0 0 38px rgba(255,200,53,.25),
+            inset 0 1px rgba(255,255,255,.24),inset 0 -1px rgba(255,197,40,.16)!important;
+ opacity:.93!important;animation:luxFabAura 3s ease-in-out infinite!important;
+}
+.quest-fab:after{
+ content:"";position:absolute;inset:4px;border-radius:21px;pointer-events:none;
+ border:1px solid rgba(255,255,255,.07);
+}
+.quest-fab:hover{opacity:1!important;transform:translateY(-50%) scale(1.055)!important;
+ box-shadow:0 25px 68px rgba(35,7,61,.66),0 0 48px rgba(255,204,53,.38)!important}
+.quest-fab-icon{
+ width:60px!important;height:60px!important;flex:0 0 60px!important;border-radius:20px!important;
+ background:linear-gradient(145deg,#fff0a0,#ffd14a 45%,#e99b13)!important;
+ box-shadow:0 10px 26px rgba(255,183,30,.35),inset 0 2px rgba(255,255,255,.75),
+            inset 0 -2px rgba(151,86,0,.18)!important;
+}
+.quest-fab-icon:after{content:"★"!important;font-size:30px!important;color:#5b277c!important;
+ text-shadow:0 1px rgba(255,255,255,.45)}
+.quest-fab-title{font-size:16px!important;letter-spacing:1.7px!important;text-shadow:0 2px 8px rgba(0,0,0,.28)}
+.quest-fab-sub{font-size:8px!important;color:#f0dcff!important;letter-spacing:.8px!important}
+.quest-fab-ready{color:#ffe77e!important;text-shadow:0 0 15px rgba(255,217,63,.8)!important}
+.quest-hide{background:linear-gradient(145deg,#4e1a72,#281038)!important;border-color:#f8df91!important}
+.quest-promo{
+ width:258px!important;right:24px!important;padding:12px 14px!important;border-radius:15px!important;
+ border:1px solid rgba(255,213,79,.34)!important;
+ background:linear-gradient(135deg,rgba(23,8,38,.88),rgba(59,18,88,.86))!important;
+ box-shadow:0 14px 38px rgba(0,0,0,.30),inset 0 1px rgba(255,255,255,.06)!important
+}
+.quest-promo strong{color:#ffe377!important;text-shadow:0 0 12px rgba(255,208,56,.38)}
+
+.quest-overlay{background:rgba(7,3,14,.67)!important;backdrop-filter:blur(9px) saturate(1.08)!important}
+.quest-window{
+ width:min(1040px,94vw)!important;max-height:92vh!important;border-radius:32px!important;
+ border:1px solid rgba(255,215,91,.40)!important;
+ background:
+  radial-gradient(circle at 88% 3%,rgba(122,46,188,.14),transparent 27%),
+  linear-gradient(180deg,#160921,#0c0512)!important;
+ box-shadow:0 40px 110px rgba(0,0,0,.68),0 0 50px rgba(114,42,174,.16),
+            inset 0 1px rgba(255,255,255,.06)!important;
+ animation:luxWindowIn .34s cubic-bezier(.2,.8,.2,1)!important
+}
+.quest-header{
+ min-height:190px!important;padding:32px 34px 26px!important;
+ background:
+   linear-gradient(90deg,rgba(21,6,34,.12),rgba(21,6,34,.52)),
+   radial-gradient(circle at 78% 38%,rgba(255,211,73,.24),transparent 20%),
+   radial-gradient(circle at 66% 95%,rgba(185,70,255,.42),transparent 36%),
+   linear-gradient(118deg,#3b0e63 0%,#7629b8 48%,#27103e 100%)!important;
+ border-bottom:1px solid rgba(255,220,105,.22)!important;
+}
+.quest-header:before{
+ content:"✦  AVATARIA LIFE #2017  ✦"!important;color:#ffe17b!important;
+ font-size:11px!important;letter-spacing:3px!important;text-shadow:0 0 18px rgba(255,213,69,.42)!important
+}
+.quest-header:after{
+ content:"★ PREMIUM GÖREV MERKEZİ"!important;right:35px!important;bottom:28px!important;
+ padding:12px 17px!important;border-radius:15px!important;
+ border:1px solid rgba(255,224,112,.50)!important;
+ background:linear-gradient(135deg,rgba(27,9,44,.72),rgba(69,22,101,.66))!important;
+ color:#ffe37c!important;box-shadow:0 10px 30px rgba(0,0,0,.20),inset 0 1px rgba(255,255,255,.09)!important
+}
+.quest-header h2{
+ font-size:35px!important;margin-top:10px!important;margin-bottom:9px!important;
+ background:linear-gradient(180deg,#fff,#f4dcff);-webkit-background-clip:text;background-clip:text;color:transparent!important;
+ text-shadow:none!important;letter-spacing:.3px!important
+}
+.quest-header p{font-size:11px!important;color:#eadff2!important;max-width:570px;line-height:1.65!important}
+.quest-close{
+ width:48px!important;height:48px!important;right:23px!important;top:22px!important;border-radius:16px!important;
+ border:1px solid rgba(255,226,129,.18)!important;background:rgba(17,6,27,.48)!important;
+ box-shadow:inset 0 1px rgba(255,255,255,.07)!important;transition:.18s!important
+}
+.quest-close:hover{transform:rotate(5deg) scale(1.06);background:rgba(91,34,127,.70)!important;color:#ffe47b!important}
+
+.quest-tabs{padding:20px 22px 0!important;gap:11px!important}
+.quest-tab{
+ height:58px!important;border-radius:17px!important;color:#b7a9c2!important;
+ background:linear-gradient(180deg,#21112e,#190c24)!important;
+ border:1px solid rgba(255,255,255,.09)!important;transition:.2s!important;position:relative;overflow:hidden
+}
+.quest-tab:hover{color:#fff!important;transform:translateY(-1px);border-color:rgba(192,116,238,.28)!important}
+.quest-tab.active{
+ color:#fff!important;border-color:#ffd75b!important;
+ background:linear-gradient(135deg,#57217f,#963bd4)!important;
+ box-shadow:0 10px 28px rgba(116,42,169,.28),inset 0 1px rgba(255,255,255,.16)!important
+}
+.quest-tab.active:after{content:"";position:absolute;left:20%;right:20%;bottom:0;height:2px;
+ background:#ffe27a;box-shadow:0 0 12px #ffd858}
+
+.quest-list{padding:20px 22px 24px!important;gap:15px!important}
+.quest-card{
+ padding:22px!important;border-radius:22px!important;
+ background:
+   radial-gradient(circle at 94% 15%,rgba(143,58,202,.08),transparent 22%),
+   linear-gradient(135deg,rgba(35,18,48,.98),rgba(24,11,34,.98))!important;
+ border:1px solid rgba(255,255,255,.095)!important;
+ box-shadow:0 12px 30px rgba(0,0,0,.14),inset 0 1px rgba(255,255,255,.025)!important;
+ transition:.2s transform,.2s border-color,.2s box-shadow!important
+}
+.quest-card:hover{transform:translateY(-2px)!important;border-color:rgba(196,116,245,.38)!important;
+ box-shadow:0 16px 36px rgba(0,0,0,.20),0 0 24px rgba(129,48,184,.07)!important}
+.quest-card.complete:not(.claimed){border-color:rgba(255,211,75,.35)!important;
+ box-shadow:0 15px 35px rgba(0,0,0,.18),0 0 24px rgba(255,199,45,.08)!important}
+.quest-card h3{font-size:16px!important;letter-spacing:.1px!important}
+.quest-status{font-size:9px!important;color:#a99bb4!important}
+.quest-progress{height:12px!important;background:#2d2135!important;border:1px solid rgba(255,255,255,.025)!important}
+.quest-progress span{
+ background:linear-gradient(90deg,#7130bd,#b84fe4 70%,#e083ff)!important;
+ box-shadow:0 0 18px rgba(191,79,229,.34)!important;position:relative
+}
+.quest-progress span:after{content:"";position:absolute;inset:1px;border-radius:99px;
+ background:linear-gradient(180deg,rgba(255,255,255,.25),transparent 55%)}
+.quest-count{font-size:10px!important;color:#e8dded!important}
+.quest-rewards{gap:8px!important}
+.quest-reward{
+ padding:8px 11px!important;border-radius:11px!important;border:1px solid rgba(255,255,255,.045)!important;
+ background:linear-gradient(180deg,#2b1a39,#22142e)!important;box-shadow:inset 0 1px rgba(255,255,255,.04)!important
+}
+.quest-reward.gold{color:#ffe35e!important}.quest-reward.gold:before{content:"● ";color:#ffd900;text-shadow:0 0 7px #ffd900}
+.quest-reward.silver:before{content:"● ";color:#f4f4f6;text-shadow:0 0 6px rgba(255,255,255,.5)}
+.quest-reward.energy:before{content:"◆ ";color:#65efa0}
+.quest-claim{
+ min-width:160px!important;height:48px!important;border-radius:15px!important;
+ border:1px solid rgba(255,255,255,.035)!important;background:linear-gradient(180deg,#2b1b38,#23152e)!important
+}
+.quest-claim.ready{
+ color:#4b2b00!important;border:1px solid #ffe27a!important;
+ background:linear-gradient(180deg,#fff09a 0%,#ffd450 48%,#eea71e 100%)!important;
+ box-shadow:0 10px 25px rgba(255,183,35,.24),inset 0 1px rgba(255,255,255,.75)!important;
+ animation:luxRewardReady 1.8s ease-in-out infinite!important
+}
+.quest-claim.ready:hover{transform:translateY(-1px) scale(1.025);filter:brightness(1.06)!important}
+.quest-card.claimed{opacity:.66!important;filter:saturate(.72)}
+.quest-dock{background:linear-gradient(180deg,#8736c7,#3b145d)!important;color:#ffe06b!important;border-color:#ffd45b!important}
+
+@keyframes luxFabAura{
+ 0%,100%{box-shadow:0 22px 60px rgba(31,6,55,.58),0 0 26px rgba(255,200,53,.17)}
+ 50%{box-shadow:0 22px 64px rgba(31,6,55,.64),0 0 45px rgba(255,200,53,.34)}
+}
+@keyframes luxWindowIn{from{opacity:0;transform:translateY(16px) scale(.975)}to{opacity:1;transform:none}}
+@keyframes luxRewardReady{
+ 0%,100%{box-shadow:0 10px 25px rgba(255,183,35,.22),0 0 0 rgba(255,211,70,0)}
+ 50%{box-shadow:0 12px 29px rgba(255,183,35,.32),0 0 18px rgba(255,211,70,.16)}
+}
+@media(max-width:650px){
+ .quest-fab{width:195px!important;min-height:72px!important;right:9px!important}
+ .quest-fab-icon{width:45px!important;height:45px!important;flex-basis:45px!important;border-radius:14px!important}
+ .quest-promo{width:195px!important;right:9px!important}
+ .quest-window{border-radius:20px!important}.quest-header{min-height:145px!important;padding:22px 18px!important}
+ .quest-header h2{font-size:24px!important}.quest-header:after{display:none!important}
+ .quest-card{padding:15px!important}.quest-claim{min-width:118px!important;height:43px!important}
+}
+
+
+/* ===== AVATARIA LIFE #2017 — v1.6.1 NATIVE QUEST BUTTON =====
+   Visual-only launcher override. Backend/API/Quest logic untouched.
+*/
+.quest-fab{
+    left:0!important;
+    top:258px!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:91px!important;
+    height:82px!important;
+    min-height:0!important;
+    padding:0!important;
+    margin:0!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+    animation:none!important;
+    backdrop-filter:none!important;
+    overflow:visible!important;
+    z-index:10020!important;
+}
+.quest-fab:hover{
+    transform:none!important;
+    background:rgba(255,215,74,.025)!important;
+    box-shadow:inset 0 0 0 2px rgba(255,218,83,.10)!important;
+    border-radius:7px!important;
+}
+.quest-fab:before,.quest-fab:after,
+.quest-fab-icon,.quest-fab-copy,.quest-fab-title,.quest-fab-sub,
+.quest-fab-ready,.quest-fab-badge{
+    display:none!important;
+}
+.quest-promo{display:none!important}
+
+/* Keep the small hide control out of the native icon area. */
+.quest-hide{display:none!important}
+
+/* If launcher is hidden by an old preference, keep a tiny native-position restore target. */
+.quest-dock{
+    left:0!important;
+    right:auto!important;
+    top:258px!important;
+    width:91px!important;
+    height:82px!important;
+    transform:none!important;
+    border:0!important;
+    border-radius:0!important;
+    background:transparent!important;
+    box-shadow:none!important;
+    color:transparent!important;
+    opacity:1!important;
+}
+body.quest-ui-hidden .quest-dock{display:block!important}
+
+/* The SWF's native quest icon remains fully visible below this transparent hitbox. */
+@media(max-width:1100px){
+    .quest-fab,.quest-dock{
+        left:0!important;
+        top:258px!important;
+        width:91px!important;
+        height:82px!important;
+    }
+}
+
+
+/* ===== AVATARIA LIFE #2017 — v1.6.2 COMPACT QUEST BUTTON =====
+   Small visible button covering the original SWF quest icon.
+   Backend / quest APIs untouched.
+*/
+.quest-fab{
+    left:1px!important;
+    top:258px!important;
+    right:auto!important;
+    bottom:auto!important;
+    width:88px!important;
+    height:80px!important;
+    min-height:80px!important;
+    padding:0!important;
+    margin:0!important;
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:9px!important;
+    border:1px solid rgba(255,216,76,.68)!important;
+    background:
+      radial-gradient(circle at 50% 35%,rgba(255,225,91,.17),transparent 42%),
+      linear-gradient(145deg,rgba(57,18,83,.95),rgba(103,37,150,.96))!important;
+    box-shadow:0 5px 16px rgba(0,0,0,.34),0 0 13px rgba(255,205,55,.15),
+               inset 0 1px rgba(255,255,255,.16)!important;
+    opacity:.96!important;
+    transform:none!important;
+    animation:compactQuestGlow 2.4s ease-in-out infinite!important;
+    overflow:hidden!important;
+    cursor:pointer!important;
+}
+.quest-fab:hover{
+    transform:none!important;
+    filter:brightness(1.12)!important;
+    border-color:#ffe06b!important;
+    box-shadow:0 6px 18px rgba(0,0,0,.40),0 0 18px rgba(255,208,58,.30)!important;
+}
+.quest-fab:before,.quest-fab:after{display:none!important}
+.quest-fab-copy,.quest-fab-title,.quest-fab-sub,.quest-fab-ready,.quest-fab-badge{display:none!important}
+.quest-fab-icon{
+    display:flex!important;
+    width:54px!important;
+    height:54px!important;
+    flex:0 0 54px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    border-radius:14px!important;
+    background:linear-gradient(145deg,#fff09a,#ffd346 52%,#e99d18)!important;
+    box-shadow:0 6px 15px rgba(0,0,0,.20),inset 0 2px rgba(255,255,255,.68)!important;
+    font-size:0!important;
+}
+.quest-fab-icon:after{
+    display:block!important;
+    content:"✓"!important;
+    font-size:30px!important;
+    line-height:1!important;
+    font-weight:1000!important;
+    color:#582579!important;
+    text-shadow:0 1px rgba(255,255,255,.38)!important;
+}
+.quest-promo,.quest-hide{display:none!important}
+.quest-dock{
+    left:1px!important;top:258px!important;right:auto!important;
+    width:88px!important;height:80px!important;transform:none!important;
+    border-radius:9px!important;border:1px solid rgba(255,216,76,.68)!important;
+    background:linear-gradient(145deg,rgba(57,18,83,.95),rgba(103,37,150,.96))!important;
+    color:#ffe16c!important;box-shadow:0 5px 16px rgba(0,0,0,.34)!important;
+}
+@keyframes compactQuestGlow{
+  0%,100%{box-shadow:0 5px 16px rgba(0,0,0,.34),0 0 9px rgba(255,205,55,.10)}
+  50%{box-shadow:0 5px 17px rgba(0,0,0,.38),0 0 17px rgba(255,205,55,.25)}
+}
+
+
+/* ===== v1.6.3 QUEST ICON EXACT COVER =====
+   Sadece launcher görünümü/konumu. Görev backend ve API kodlarına dokunmaz.
+   SWF sol menüdeki mevcut görev ikonunun TAM üstünü kaplar.
+*/
+.quest-fab{
+    position:fixed!important;
+    left:3px!important;
+    top:297px!important;
+    right:auto!important;
+    bottom:auto!important;
+
+    width:111px!important;
+    height:101px!important;
+    min-width:0!important;
+    min-height:0!important;
+    padding:0!important;
+    margin:0!important;
+
+    display:flex!important;
+    align-items:center!important;
+    justify-content:center!important;
+
+    border-radius:5px!important;
+    border:2px solid rgba(255,210,61,.78)!important;
+    background:rgba(13,53,61,.96)!important;
+
+    box-shadow:
+      0 0 0 1px rgba(255,244,170,.10) inset,
+      0 0 7px rgba(255,202,38,.28),
+      0 0 13px rgba(255,187,21,.10)!important;
+
+    opacity:1!important;
+    transform:none!important;
+    filter:none!important;
+    animation:questExactGlow 2.4s ease-in-out infinite!important;
+    overflow:hidden!important;
+    cursor:pointer!important;
+    z-index:10020!important;
+}
+
+/* İçeride sadece ikon kalsın */
+.quest-fab-copy,
+.quest-fab-title,
+.quest-fab-sub,
+.quest-fab-ready,
+.quest-fab-badge{display:none!important}
+
+.quest-fab:before,.quest-fab:after{display:none!important}
+
+.quest-fab-icon{
+    display:flex!important;
+    width:72px!important;
+    height:72px!important;
+    flex:0 0 72px!important;
+    align-items:center!important;
+    justify-content:center!important;
+    margin:0!important;
+    border-radius:18px!important;
+    border:1px solid rgba(255,234,132,.85)!important;
+    background:linear-gradient(145deg,#fff29b 0%,#ffd74d 48%,#e9a11b 100%)!important;
+    box-shadow:
+      0 5px 13px rgba(0,0,0,.28),
+      inset 0 2px rgba(255,255,255,.68),
+      0 0 8px rgba(255,211,62,.20)!important;
+    font-size:0!important;
+}
+.quest-fab-icon:after{
+    content:"✓"!important;
+    display:block!important;
+    font-size:43px!important;
+    line-height:1!important;
+    font-weight:900!important;
+    color:#542078!important;
+    text-shadow:0 1px 0 rgba(255,255,255,.40)!important;
+}
+
+.quest-fab:hover{
+    transform:none!important;
+    filter:brightness(1.07)!important;
+    border-color:#ffe36e!important;
+    box-shadow:
+      0 0 0 1px rgba(255,250,196,.16) inset,
+      0 0 10px rgba(255,211,61,.40),
+      0 0 17px rgba(255,190,24,.16)!important;
+}
+
+/* Eski sağ bildirim / gizle elemanları yok */
+.quest-promo,.quest-hide{display:none!important}
+
+/* Eski dock görünürse aynı alanı bozmasın */
+.quest-dock{
+    left:3px!important;top:297px!important;right:auto!important;bottom:auto!important;
+    width:111px!important;height:101px!important;
+    border-radius:5px!important;
+    border:2px solid rgba(255,210,61,.78)!important;
+    background:rgba(13,53,61,.96)!important;
+    color:#ffd84d!important;
+    transform:none!important;
+    box-shadow:0 0 7px rgba(255,202,38,.28)!important;
+}
+
+@keyframes questExactGlow{
+    0%,100%{box-shadow:0 0 0 1px rgba(255,244,170,.10) inset,0 0 6px rgba(255,202,38,.22)}
+    50%{box-shadow:0 0 0 1px rgba(255,244,170,.14) inset,0 0 10px rgba(255,202,38,.38),0 0 15px rgba(255,184,18,.10)}
+}
+
+
+/* =========================================================
+   AVATARIA LIFE #2017 — QUEST UI v2.0 GAME STYLE
+   UI rebuilt from zero. Existing JS/API/backend untouched.
+   ========================================================= */
+.alq-launcher.quest-fab{
+ position:fixed!important;left:auto!important;right:18px!important;top:44%!important;bottom:auto!important;
+ width:78px!important;height:78px!important;min-width:78px!important;min-height:78px!important;
+ padding:0!important;margin:0!important;border-radius:24px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+ background:linear-gradient(145deg,#6d9b23 0%,#a8ce38 48%,#688d1d 100%)!important;
+ border:2px solid #f7d45a!important;
+ box-shadow:0 4px 0 #4b6715,0 8px 18px rgba(0,0,0,.38),inset 0 2px 0 rgba(255,255,255,.45),
+            0 0 12px rgba(255,215,70,.18)!important;
+ opacity:1!important;transform:none!important;filter:none!important;overflow:visible!important;
+ animation:alqQuestBlink 2.2s ease-in-out infinite!important;z-index:10020!important;cursor:pointer!important
+}
+.alq-launcher.quest-fab:hover{transform:scale(1.06)!important;filter:brightness(1.08)!important}
+.alq-launcher .quest-fab-icon{
+ display:flex!important;width:58px!important;height:58px!important;flex:0 0 58px!important;
+ align-items:center!important;justify-content:center!important;border-radius:17px!important;
+ background:linear-gradient(145deg,#fff2a6,#ffd44c 56%,#e79a17)!important;
+ border:1px solid rgba(126,77,4,.42)!important;
+ box-shadow:inset 0 2px 0 rgba(255,255,255,.75),0 3px 6px rgba(67,45,0,.28)!important;
+ font-size:0!important;position:relative!important
+}
+.alq-launcher .quest-fab-icon:before{content:"";position:absolute;width:34px;height:41px;border-radius:5px 5px 8px 8px;
+ background:linear-gradient(#fff9d8,#f5df91);border:2px solid #835c19;box-shadow:inset 0 -5px rgba(202,163,64,.15)}
+.alq-launcher .quest-fab-icon:after{content:"✓"!important;display:block!important;position:relative!important;
+ font-size:27px!important;font-weight:1000!important;color:#5c8420!important;text-shadow:0 1px #fff!important}
+.alq-launcher-copy{display:none!important}
+.alq-launcher .quest-fab-badge{display:none!important}
+.alq-launcher .quest-fab-badge.show{display:flex!important;position:absolute!important;right:-7px!important;top:-7px!important;
+ width:25px!important;height:25px!important;border-radius:50%!important;align-items:center!important;justify-content:center!important;
+ background:#e74a35!important;color:#fff!important;border:2px solid #ffe36a!important;font-size:10px!important;font-weight:1000!important;
+ box-shadow:0 2px 7px rgba(0,0,0,.35)!important}
+.alq-launcher .quest-hide{display:none!important}
+.alq-promo.quest-promo{display:none!important}
+.quest-dock{right:18px!important;left:auto!important;top:44%!important;width:62px!important;height:62px!important;
+ border-radius:20px!important;background:linear-gradient(#a8ce38,#648c1d)!important;border:2px solid #f7d45a!important;
+ color:#fff3a2!important;box-shadow:0 4px 0 #4b6715,0 7px 16px rgba(0,0,0,.35)!important}
+
+.alq-overlay.quest-overlay{display:none;position:fixed!important;inset:0!important;padding:18px!important;
+ align-items:center!important;justify-content:center!important;background:rgba(4,18,25,.56)!important;
+ backdrop-filter:blur(4px)!important;z-index:10050!important}
+.alq-overlay.quest-overlay.open{display:flex!important}
+.alq-window.quest-window{
+ width:min(1000px,94vw)!important;max-height:91vh!important;border-radius:25px!important;overflow:hidden!important;
+ border:3px solid #d5b148!important;background:#e9e1c8!important;
+ box-shadow:0 8px 0 #725423,0 24px 70px rgba(0,0,0,.55),inset 0 0 0 2px #fff4bd!important;
+ animation:alqPanelIn .25s cubic-bezier(.2,.8,.2,1)!important
+}
+.alq-banner.quest-head{
+ min-height:178px!important;padding:23px 28px!important;display:flex!important;align-items:center!important;gap:20px!important;
+ position:relative!important;overflow:hidden!important;
+ background:
+  radial-gradient(circle at 77% 25%,rgba(255,240,143,.38),transparent 19%),
+  linear-gradient(180deg,rgba(255,255,255,.10),transparent 50%),
+  linear-gradient(120deg,#6b9324 0%,#9ec53b 48%,#50751a 100%)!important;
+ border-bottom:4px solid #b98d2d!important;color:#fff!important
+}
+.alq-banner:before{content:"";position:absolute;inset:8px;border:1px solid rgba(255,243,165,.42);border-radius:16px;pointer-events:none}
+.alq-banner-emblem{width:105px;height:105px;flex:0 0 105px;border-radius:50%;position:relative;display:flex;align-items:center;justify-content:center;
+ background:radial-gradient(circle,#ffe873 0 38%,#d7a928 39% 54%,#785515 55% 61%,#f5cf4b 62% 68%,transparent 69%);
+ filter:drop-shadow(0 6px 5px rgba(45,55,4,.32));transform:rotate(-4deg)}
+.alq-emblem-star{font-size:57px;color:#fff0a2;text-shadow:0 3px #7c5915}
+.alq-emblem-check{position:absolute;font-size:31px;font-weight:1000;color:#527a1d;text-shadow:0 1px #fff;transform:translateY(1px)}
+.alq-banner-copy{display:flex!important;flex-direction:column!important;align-items:flex-start!important;z-index:2}
+.alq-kicker{font-size:10px!important;font-weight:1000!important;letter-spacing:2.4px!important;color:#fff1a5!important;
+ text-shadow:0 2px rgba(64,76,13,.5);margin-bottom:5px}
+.alq-banner #questDialogTitle{font-size:30px!important;line-height:1!important;color:#fff!important;letter-spacing:.6px!important;
+ text-shadow:0 3px 0 rgba(65,79,15,.48),0 4px 9px rgba(0,0,0,.18)!important}
+.alq-description{font-size:11px!important;color:#f7f3dd!important;margin-top:8px!important;text-shadow:0 1px rgba(0,0,0,.2)}
+.alq-banner-tags{display:flex;gap:7px;flex-wrap:wrap;margin-top:13px}
+.alq-banner-tags span{padding:6px 9px;border-radius:10px;background:rgba(55,75,14,.48);border:1px solid rgba(255,242,159,.28);
+ color:#fff5bc;font-size:8px;font-weight:1000;letter-spacing:.5px}
+.alq-banner-art{margin-left:auto;width:190px;height:110px;position:relative;z-index:1}
+.alq-coin{position:absolute;width:58px;height:58px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+ font-size:24px;font-weight:1000;color:#7c5b0e;background:radial-gradient(circle,#fff0a2 0 38%,#f4c638 39% 65%,#a87313 66% 73%,#ffe66e 74%);
+ border:2px solid #815e13;box-shadow:0 5px 8px rgba(40,48,7,.28)}
+.alq-coin.c1{right:75px;top:8px;transform:rotate(-11deg)}.alq-coin.c2{right:22px;top:43px;transform:scale(.86) rotate(9deg);filter:saturate(.2)}
+.alq-gift{position:absolute;right:92px;bottom:0;font-size:41px;color:#fff1a1;text-shadow:0 3px #725519}
+.alq-close.quest-close{position:absolute!important;right:16px!important;top:15px!important;width:40px!important;height:40px!important;
+ border-radius:50%!important;background:#587b1e!important;border:2px solid #e8cb62!important;color:#fff6c5!important;
+ box-shadow:0 3px 0 #3d5913!important;font-size:22px!important;z-index:5!important}
+.alq-close:hover{filter:brightness(1.12);transform:scale(1.05)}
+
+.alq-tabs.quest-tabs{display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:10px!important;
+ padding:15px 18px 0!important;background:#e9e1c8!important}
+.alq-tabs .quest-tab{height:54px!important;border-radius:14px 14px 8px 8px!important;border:2px solid #9b7a37!important;
+ background:linear-gradient(#fff9df,#d9cba8)!important;color:#69562d!important;font-size:11px!important;font-weight:1000!important;
+ letter-spacing:.8px!important;box-shadow:0 3px 0 #a88c51!important;text-shadow:0 1px #fff!important}
+.alq-tabs .quest-tab:hover{filter:brightness(1.04);transform:translateY(-1px)}
+.alq-tabs .quest-tab.active{background:linear-gradient(#b5db49,#779f25)!important;color:#fff!important;border-color:#b58a25!important;
+ box-shadow:0 3px 0 #577619,inset 0 1px rgba(255,255,255,.4)!important;text-shadow:0 2px #557018!important}
+.alq-tab-icon{font-size:15px;margin-right:6px;color:#e3b82f}.alq-tabs .active .alq-tab-icon{color:#fff0a0}
+
+.quest-toast{margin:10px 18px 0!important;border-radius:10px!important;font-size:10px!important}
+.alq-list.quest-list{padding:15px 18px 20px!important;overflow-y:auto!important;background:
+ repeating-linear-gradient(0deg,rgba(118,92,43,.025) 0 1px,transparent 1px 5px),#e9e1c8!important}
+.alq-list .quest-card{margin-bottom:12px!important;padding:16px 17px!important;border-radius:16px!important;
+ border:2px solid #b9a375!important;background:linear-gradient(180deg,#fffdf2,#e8dfc5)!important;
+ box-shadow:0 4px 0 #c1af87,0 7px 14px rgba(77,58,22,.09)!important;color:#57482d!important;position:relative!important}
+.alq-list .quest-card:hover{transform:translateY(-1px)!important;border-color:#a98a43!important}
+.alq-list .quest-card.complete:not(.claimed){border-color:#d0a62f!important;box-shadow:0 4px 0 #b58c22,0 0 15px rgba(235,184,38,.16)!important}
+.alq-list .quest-card h3{color:#493b25!important;font-size:15px!important;text-shadow:0 1px #fff!important}
+.alq-list .quest-status{color:#887655!important;font-size:9px!important}
+.alq-list .quest-progress{height:13px!important;border-radius:10px!important;background:#c7bda5!important;border:1px solid #a99a78!important;
+ box-shadow:inset 0 2px 3px rgba(81,63,30,.15)!important;overflow:hidden!important}
+.alq-list .quest-progress span{background:linear-gradient(#b7df4c,#6f9b21)!important;box-shadow:inset 0 2px rgba(255,255,255,.28)!important}
+.alq-list .quest-count{color:#5d4d31!important;font-weight:1000!important}
+.alq-list .quest-reward{border-radius:10px!important;padding:7px 10px!important;background:#ddd2b5!important;border:1px solid #b9a77c!important;
+ color:#5e4d2d!important;box-shadow:inset 0 1px #fff7de!important}
+.alq-list .quest-reward.gold{background:#fff0a6!important;border-color:#d5ae35!important;color:#78580a!important}
+.alq-list .quest-reward.silver{background:#eeeeea!important;border-color:#bbb9ad!important;color:#65645e!important}
+.alq-list .quest-claim{min-width:145px!important;height:43px!important;border-radius:12px!important;border:2px solid #9e8c68!important;
+ background:linear-gradient(#d9d0bc,#b9ac91)!important;color:#71654e!important;box-shadow:0 3px 0 #8f8065!important}
+.alq-list .quest-claim.ready{background:linear-gradient(#ffe979,#efb92d)!important;border-color:#9b7116!important;color:#664609!important;
+ box-shadow:0 3px 0 #9c7114,0 0 12px rgba(242,185,38,.24)!important;animation:alqRewardPulse 1.55s ease-in-out infinite!important}
+.alq-list .quest-card.claimed{opacity:.67!important;filter:saturate(.72)!important}
+.quest-loading{color:#756342!important}
+
+@keyframes alqQuestBlink{
+ 0%,100%{box-shadow:0 4px 0 #4b6715,0 8px 18px rgba(0,0,0,.38),inset 0 2px rgba(255,255,255,.45),0 0 7px rgba(255,215,70,.10)}
+ 50%{box-shadow:0 4px 0 #4b6715,0 8px 18px rgba(0,0,0,.38),inset 0 2px rgba(255,255,255,.45),0 0 20px rgba(255,220,73,.58)}
+}
+@keyframes alqPanelIn{from{opacity:0;transform:scale(.965) translateY(10px)}to{opacity:1;transform:none}}
+@keyframes alqRewardPulse{0%,100%{filter:brightness(1)}50%{filter:brightness(1.12)}}
+
+@media(max-width:760px){
+ .alq-launcher.quest-fab{right:8px!important;top:42%!important;width:64px!important;height:64px!important;border-radius:20px!important}
+ .alq-launcher .quest-fab-icon{width:48px!important;height:48px!important}.alq-launcher .quest-fab-icon:before{width:28px;height:34px}
+ .alq-launcher .quest-fab-icon:after{font-size:23px!important}
+ .alq-window.quest-window{width:100%!important;max-height:95vh!important;border-radius:18px!important}
+ .alq-banner.quest-head{min-height:135px!important;padding:18px!important;gap:12px!important}
+ .alq-banner-emblem{width:72px;height:72px;flex-basis:72px}.alq-emblem-star{font-size:40px}.alq-emblem-check{font-size:22px}
+ .alq-banner #questDialogTitle{font-size:21px!important}.alq-description{display:none}.alq-banner-art{display:none}
+ .alq-banner-tags{margin-top:8px}.alq-banner-tags span{font-size:7px;padding:4px 6px}
+ .alq-tabs.quest-tabs{padding:10px 10px 0!important;gap:6px!important}.alq-tabs .quest-tab{height:45px!important;font-size:8px!important}
+ .alq-list.quest-list{padding:10px!important}.alq-list .quest-card{padding:13px!important}
+}
+
+
+/* ===== AVATARIA LIFE #2017 — QUEST UI v2.2 MINI + EDGE DOCK ===== */
+.alq-window.quest-window{width:min(760px,78vw)!important;max-height:76vh!important;border-radius:20px!important}
+.alq-banner.quest-head{min-height:104px!important;padding:13px 18px!important;gap:12px!important}
+.alq-banner-emblem{width:66px!important;height:66px!important;flex:0 0 66px!important}
+.alq-emblem-star{font-size:37px!important}.alq-emblem-check{font-size:21px!important}
+.alq-banner #questDialogTitle{font-size:22px!important}.alq-kicker{font-size:8px!important}
+.alq-description{font-size:9px!important;margin-top:4px!important}
+.alq-banner-tags{margin-top:7px!important;gap:4px!important}.alq-banner-tags span{font-size:7px!important;padding:4px 6px!important}
+.alq-banner-art{width:125px!important;height:76px!important}.alq-coin{width:39px!important;height:39px!important;font-size:16px!important}
+.alq-coin.c1{right:53px!important;top:2px!important}.alq-coin.c2{right:17px!important;top:27px!important}
+.alq-gift{right:62px!important;font-size:28px!important}.alq-close.quest-close{width:33px!important;height:33px!important;right:11px!important;top:10px!important;font-size:18px!important}
+.alq-tabs.quest-tabs{gap:7px!important;padding:10px 12px 0!important}.alq-tabs .quest-tab{height:39px!important;border-radius:10px 10px 6px 6px!important;font-size:9px!important}
+.alq-tab-icon{font-size:11px!important;margin-right:4px!important}
+.alq-list.quest-list{padding:10px 12px 13px!important}.alq-list .quest-card{margin-bottom:8px!important;padding:11px 12px!important;border-radius:12px!important}
+.alq-list .quest-card h3{font-size:13px!important;color:#3d301c!important;font-weight:900!important}
+.alq-list .quest-status{font-size:8px!important;color:#66583d!important;font-weight:700!important}
+.alq-list .quest-progress{height:10px!important}.alq-list .quest-count{font-size:9px!important;color:#44371f!important}
+.alq-list .quest-claim{min-width:115px!important;height:36px!important;font-size:8px!important}
+.alq-list .quest-reward,.alq-list .quest-reward *{font-size:9px!important;font-weight:1000!important;color:#33280f!important;text-shadow:none!important;opacity:1!important}
+.alq-list .quest-reward{padding:6px 8px!important;background:#f1e6bd!important;border:1px solid #ad955c!important}
+.alq-list .quest-reward.gold{background:linear-gradient(#fff5a9,#f1cf4b)!important;border-color:#b78a13!important;color:#5b4100!important}
+.alq-list .quest-reward.silver{background:linear-gradient(#fff,#d7d9dc)!important;border-color:#8d9298!important;color:#30343a!important}
+.alq-list .quest-card.claimed{opacity:.82!important}.alq-list .quest-card.claimed .quest-reward{opacity:1!important;filter:none!important}
+
+/* Küçük buton: sağ kenarda yarı saklı, hover ile çıkar */
+.alq-launcher.quest-fab{left:auto!important;right:-31px!important;top:46%!important;bottom:auto!important;width:68px!important;height:68px!important;min-width:68px!important;min-height:68px!important;border-radius:19px 0 0 19px!important;transition:right .22s ease!important;animation:alqEdgeBlink 2.35s ease-in-out infinite!important}
+.alq-launcher.quest-fab:hover,.alq-launcher.quest-fab:focus-visible{right:0!important;transform:none!important}
+.alq-launcher .quest-fab-icon{width:48px!important;height:48px!important;flex:0 0 48px!important;border-radius:13px!important;transform:translateX(-10px)!important;transition:transform .22s ease!important}
+.alq-launcher:hover .quest-fab-icon,.alq-launcher:focus-visible .quest-fab-icon{transform:translateX(0)!important}
+.alq-launcher .quest-fab-icon:before{width:27px!important;height:33px!important}.alq-launcher .quest-fab-icon:after{font-size:22px!important}
+.alq-launcher .quest-fab-badge.show{right:24px!important;top:-7px!important;width:23px!important;height:23px!important;font-size:9px!important}
+.quest-dock{left:auto!important;right:-24px!important;top:46%!important;width:54px!important;height:54px!important;border-radius:16px 0 0 16px!important;transition:right .2s ease!important}.quest-dock:hover{right:0!important}
+@keyframes alqEdgeBlink{0%,100%{filter:brightness(1);box-shadow:0 4px 0 #4b6715,0 8px 16px rgba(0,0,0,.34),0 0 6px rgba(255,216,65,.12)}50%{filter:brightness(1.09);box-shadow:0 4px 0 #4b6715,0 8px 16px rgba(0,0,0,.34),0 0 14px rgba(255,216,65,.45)}}
+@media(max-width:900px){.alq-window.quest-window{width:min(720px,92vw)!important;max-height:84vh!important}}
+
+
+/* ===== QUEST v2.3 ACTIVITY + REWARD SYNC ===== */
+.alq-tabs.quest-tabs{grid-template-columns:repeat(4,1fr)!important}
+.alq-balance-strip{
+ display:flex;align-items:center;gap:7px;margin:8px 12px 0;padding:7px 10px;border-radius:9px;
+ background:#d9cda9;border:1px solid #ad9658;color:#59461d;font-size:8px;font-weight:900
+}
+.alq-balance-strip>span{margin-right:auto;letter-spacing:.8px;color:#77602c}
+.alq-balance-strip b{padding:4px 7px;border-radius:7px;background:#fff7d9;border:1px solid #bda664;color:#4b3a14}
+.quest-fab-badge.show{display:flex!important}
+@media(max-width:760px){
+ .alq-tabs .quest-tab{font-size:7px!important;padding:0 3px!important}
+ .alq-tab-icon{display:none!important}
+ .alq-balance-strip{font-size:7px!important;gap:3px!important;padding:5px!important}
+ .alq-balance-strip>span{display:none}
+}
+
+
+/* ===== QUEST v2.4 ENDLESS + HOW-TO ===== */
+.quest-howto{
+ margin-top:4px!important;max-width:540px!important;color:#5b4b2d!important;
+ font-size:8px!important;line-height:1.35!important;font-weight:700!important
+}
+.quest-name:after{content:"  ↻";color:#789b27;font-weight:1000}
+.quest-card.complete .quest-howto{color:#624c1d!important}
+
+
+/* ===== QUEST v2.5 DYNAMIC ENDLESS ===== */
+.quest-howto:before{
+    content:"NASIL YAPILIR • ";
+    color:#7b982d;
+    font-weight:1000;
+}
+
+
+/* ===== QUEST v2.5.1 COMPLETION POPUP ===== */
+.alq-complete-popup{
+ position:fixed;inset:0;z-index:100000;display:none;align-items:center;justify-content:center;
+ background:rgba(20,24,10,.48);backdrop-filter:blur(2px)
+}
+.alq-complete-popup.show{display:flex;animation:alqPopFade .18s ease-out}
+.alq-complete-card{
+ position:relative;width:min(410px,88vw);padding:22px 22px 18px;text-align:center;
+ border:3px solid #77972b;border-radius:18px;
+ background:linear-gradient(#fff9df,#eadcad);color:#4a3b20;
+ box-shadow:0 8px 0 #536c1e,0 18px 40px rgba(0,0,0,.38)
+}
+.alq-complete-medal{
+ width:64px;height:64px;margin:-48px auto 8px;border:4px solid #fff3a6;border-radius:50%;
+ display:flex;align-items:center;justify-content:center;background:linear-gradient(#9bc83e,#5d8e20);
+ color:white;font-size:35px;font-weight:1000;box-shadow:0 4px 0 #486c19,0 7px 15px rgba(0,0,0,.25)
+}
+.alq-complete-kicker{font-size:8px;font-weight:1000;letter-spacing:2px;color:#789528;margin-top:6px}
+.alq-complete-card h2{margin:5px 25px 7px;font-size:18px;line-height:1.1;color:#4a3815}
+.alq-complete-card p{margin:0 0 9px;font-size:10px;font-weight:800;color:#665638}
+.alq-complete-reward{
+ display:inline-block;margin:2px auto 10px;padding:7px 13px;border:1px solid #b69228;border-radius:9px;
+ background:linear-gradient(#fff4a2,#e8c64b);color:#5a4100;font-size:10px;font-weight:1000
+}
+.alq-complete-info{
+ padding:10px 12px;border:1px solid #b7a16a;border-radius:10px;background:#fff9e6;
+ font-size:9px;line-height:1.5;color:#5c4d31
+}
+.alq-complete-next{margin:9px 0 11px;font-size:9px;font-weight:1000;color:#698723}
+.alq-complete-ok{
+ min-width:140px;height:36px;border:0;border-radius:10px;background:linear-gradient(#9ecf3e,#699c25);
+ color:#fff;font-size:9px;font-weight:1000;cursor:pointer;box-shadow:0 4px 0 #4f731d
+}
+.alq-complete-ok:active{transform:translateY(2px);box-shadow:0 2px 0 #4f731d}
+.alq-complete-close{
+ position:absolute;right:9px;top:7px;width:29px;height:29px;border:0;border-radius:50%;
+ background:#bd5b43;color:#fff;font-size:18px;font-weight:900;cursor:pointer
+}
+@keyframes alqPopFade{from{opacity:0}to{opacity:1}}
+@media(max-width:520px){.alq-complete-card{padding:20px 14px 15px}.alq-complete-card h2{font-size:15px}}
+
+
+/* ===== QUEST v2.5.3 COMPACT + SCROLL ===== */
+.alq-panel{
+ width:min(720px,76vw)!important;
+ max-height:70vh!important;
+}
+.alq-banner{padding:10px 16px!important;min-height:82px!important}
+.alq-logo{width:58px!important;height:58px!important}
+.alq-title{font-size:23px!important}
+.alq-subtitle{font-size:9px!important}
+.alq-tabs{padding:8px 12px 5px!important;gap:7px!important}
+.alq-tab{height:39px!important;font-size:10px!important}
+.alq-balance-strip{margin:0 12px 7px!important;min-height:34px!important;padding:5px 9px!important}
+.alq-list{
+ overflow-y:auto!important;
+ overflow-x:hidden!important;
+ max-height:calc(70vh - 190px)!important;
+ padding:5px 12px 13px!important;
+ scrollbar-width:thin!important;
+ scrollbar-color:#9bbb3b #efe5c6!important;
+}
+.alq-list::-webkit-scrollbar{width:8px!important}
+.alq-list::-webkit-scrollbar-track{background:#efe5c6!important;border-radius:8px}
+.alq-list::-webkit-scrollbar-thumb{background:#91b438!important;border-radius:8px;border:2px solid #efe5c6}
+.quest-card{padding:10px 12px!important;margin-bottom:8px!important;border-radius:12px!important}
+.quest-name{font-size:13px!important;margin-bottom:2px!important}
+.quest-state{font-size:7px!important}
+.quest-howto{font-size:7px!important;margin-top:2px!important;line-height:1.25!important}
+.quest-progress{margin-top:6px!important}
+.quest-reward{padding:5px 8px!important}
+.quest-claim{height:34px!important;min-width:108px!important;font-size:8px!important}
+@media(max-width:760px){
+ .alq-panel{width:min(94vw,680px)!important;max-height:72vh!important}
+ .alq-list{max-height:calc(72vh - 185px)!important}
+}
+
+</style>
+</head>
+
+<body>
+<div class="avataria-bg"></div>
+<div class="scene-shade"></div>
+<div class="scene-light"></div>
+
+{% if not logged_in %}
+<section class="auth-shell">
+    <div class="brand-side">
+        <div class="brand-pill">AVATAR LIFE ONLINE</div>
+        <div class="brand-title">AVATAR LIFE <span>#2017</span></div>
+        <div class="brand-copy">
+            Tarzını oluştur, arkadaşlarınla buluş ve kendi hikâyeni Avatar Life dünyasında yaşa.
+        </div>
+        <div class="brand-meta">
+            <span>SOSYAL DÜNYA</span>
+            <span>2017 EXPERIENCE</span>
+            <span>PRIVATE SERVER</span>
+        </div>
+    </div>
+
+    <div class="auth-card">
+        <div class="auth-inner">
+            <div class="auth-tabs">
+                <button type="button" class="auth-tab active" data-panel="loginPanel">GİRİŞ</button>
+                <button type="button" class="auth-tab" data-panel="registerPanel">KAYIT OL</button>
+            </div>
+
+            <div class="auth-panel active" id="loginPanel">
+                <div class="auth-kicker">TEKRAR HOŞ GELDİN</div>
+                <div class="auth-heading">Dünyana giriş yap.</div>
+                <div class="auth-sub">Avatar Life hesabınla kaldığın yerden devam et.</div>
+
+                <form id="loginForm" method="post" action="/login" novalidate>
+                    <div class="field">
+                        <label>E-POSTA</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">@</span>
+                            <input type="email" name="email" placeholder="ornek@mail.com" autocomplete="email" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>ŞİFRE</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">◆</span>
+                            <input type="password" name="password" placeholder="Şifreni gir" autocomplete="current-password" required>
+                            <button type="button" class="reveal" data-reveal>GÖR</button>
+                        </div>
+                    </div>
+
+                    <div class="remember-row">
+                        <label class="remember-label">
+                            <input type="checkbox" id="rememberMe">
+                            <span class="remember-check">✓</span>
+                            <span class="remember-copy">
+                                <strong>Beni Hatırla</strong>
+                                <small>E-posta adresimi bu cihazda hatırla</small>
+                            </span>
+                        </label>
+                    </div>
+
+                    <button class="primary" type="submit">DÜNYAYA GİR</button>
+                    <div id="loginMessage" class="form-message" role="alert" aria-live="polite"></div>
+                </form>
+            </div>
+
+            <div class="auth-panel" id="registerPanel">
+                <div class="auth-kicker">YENİ BİR HAYAT BAŞLAT</div>
+                <div class="auth-heading">Hesabını oluştur.</div>
+                <div class="auth-sub">E-posta ve şifrenle birkaç saniyede Avatar Life dünyasına katıl.</div>
+
+                <form id="registerForm" method="post" action="/register" novalidate>
+                    <div class="field">
+                        <label>E-POSTA</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">@</span>
+                            <input type="email" name="email" placeholder="ornek@mail.com" autocomplete="email" maxlength="120" required>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>ŞİFRE</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">◆</span>
+                            <input type="password" name="password" placeholder="En az 6 karakter" autocomplete="new-password" minlength="6" maxlength="128" required>
+                            <button type="button" class="reveal" data-reveal>GÖR</button>
+                        </div>
+                    </div>
+
+                    <div class="field">
+                        <label>ŞİFRE TEKRAR</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">◆</span>
+                            <input type="password" name="password_repeat" placeholder="Şifreni tekrar gir" autocomplete="new-password" minlength="6" maxlength="128" required>
+                        </div>
+                    </div>
+
+                    <div class="captcha-card">
+                        <div class="captcha-top">
+                            <span>GÜVENLİK DOĞRULAMASI</span>
+                            <button type="button" class="captcha-refresh" id="captchaRefresh" title="Yeni kod">↻</button>
+                        </div>
+                        <div class="captcha-image" id="captchaImage"><span id="captchaCode">------</span></div>
+                    </div>
+
+                    <div class="field">
+                        <label>DOĞRULAMA KODU</label>
+                        <div class="field-wrap">
+                            <span class="field-icon">✓</span>
+                            <input type="text" name="captcha" placeholder="6 haneli kod" inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" required>
+                        </div>
+                    </div>
+
+                    <button class="primary" type="submit">HESABIMI OLUŞTUR</button>
+                    <div id="registerMessage" class="form-message" role="alert" aria-live="polite"></div>
+                </form>
+            </div>
+        </div>
+    </div>
+</section>
+
+<div class="signature">S.C.Ç</div>
+<div class="version">AVATAR LIFE • #2017</div>
+
+<script>
+(function(){
+    "use strict";
+
+    const tabs = Array.from(document.querySelectorAll(".auth-tab"));
+    const panels = Array.from(document.querySelectorAll(".auth-panel"));
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const loginMessage = document.getElementById("loginMessage");
+    const registerMessage = document.getElementById("registerMessage");
+    const captchaImage = document.getElementById("captchaImage");
+    const captchaRefresh = document.getElementById("captchaRefresh");
+    const authCard = document.querySelector(".auth-card");
+
+    function setMessage(el, text, type){
+        el.textContent = text || "";
+        el.className = "form-message";
+        if(text){
+            el.classList.add("show", type || "error");
+        }
+    }
+
+    function openPanel(id){
+        tabs.forEach(btn => btn.classList.toggle("active", btn.dataset.panel === id));
+        panels.forEach(panel => panel.classList.toggle("active", panel.id === id));
+        if (authCard) {
+            authCard.classList.toggle("register-compact", id === "registerPanel");
+        }
+        setMessage(loginMessage, "");
+        setMessage(registerMessage, "");
+        if(id === "registerPanel") loadCaptcha();
+    }
+
+    tabs.forEach(btn => {
+        btn.addEventListener("click", () => openPanel(btn.dataset.panel));
+    });
+
+    document.querySelectorAll("[data-reveal]").forEach(btn => {
+        btn.addEventListener("click", () => {
+            const input = btn.parentElement.querySelector("input");
+            const hidden = input.type === "password";
+            input.type = hidden ? "text" : "password";
+            btn.textContent = hidden ? "GİZLE" : "GÖR";
+        });
+    });
+
+    async function loadCaptcha(){
+        setMessage(registerMessage, "");
+        captchaImage.innerHTML = '<span id="captchaCode">------</span>';
+
+        try {
+            const response = await fetch("/captcha?t=" + Date.now(), {
+                method: "GET",
+                cache: "no-store",
+                credentials: "same-origin"
+            });
+
+            const data = await response.json();
+
+            if (!response.ok || !data.ok || !data.code) {
+                throw new Error(data.message || "Kod alınamadı.");
+            }
+
+            captchaImage.innerHTML =
+                '<span id="captchaCode" style="font-size:25px;font-weight:900;letter-spacing:9px;color:#fff;text-shadow:0 0 14px rgba(189,108,255,.85)">' +
+                String(data.code).replace(/[^0-9]/g, '') +
+                '</span>';
+        } catch (err) {
+            captchaImage.innerHTML =
+                '<span style="color:#ffb3c4;font-size:10px">Kod alınamadı</span>';
+            setMessage(registerMessage, "Doğrulama kodu alınamadı. Yenile düğmesine bas.", "error");
+        }
+    }
+
+    captchaRefresh.addEventListener("click", () => {
+        setMessage(registerMessage, "");
+        loadCaptcha();
+    });
+
+    loginForm.addEventListener("submit", async function(e){
+        e.preventDefault();
+        setMessage(loginMessage, "");
+
+        if(!loginForm.reportValidity()) return;
+
+        const submit = loginForm.querySelector('button[type="submit"]');
+        const original = submit.textContent;
+        submit.disabled = true;
+        submit.textContent = "GİRİŞ YAPILIYOR...";
+
+        try{
+            const response = await fetch("/login", {
+                method:"POST",
+                body:new FormData(loginForm),
+                credentials:"same-origin",
+                headers:{"X-Requested-With":"fetch"}
+            });
+            const data = await response.json();
+            if(!response.ok || !data.ok){
+                setMessage(loginMessage, data.message || "Giriş yapılamadı.", "error");
+                return;
+            }
+            setMessage(loginMessage, data.message || "Giriş başarılı.", "success");
+            window.setTimeout(() => { window.location.href = "/"; }, 350);
+        }catch(err){
+            setMessage(loginMessage, "Sunucuya bağlanılamadı.", "error");
+        }finally{
+            submit.disabled = false;
+            submit.textContent = original;
+        }
+    });
+
+    registerForm.addEventListener("submit", async function(e){
+        e.preventDefault();
+        setMessage(registerMessage, "");
+
+        if(!registerForm.reportValidity()) return;
+
+        const password = registerForm.elements["password"].value;
+        const passwordRepeat = registerForm.elements["password_repeat"].value;
+        if(password !== passwordRepeat){
+            setMessage(registerMessage, "Şifreler birbiriyle aynı değil.", "error");
+            return;
+        }
+
+        const submit = registerForm.querySelector('button[type="submit"]');
+        const original = submit.textContent;
+        submit.disabled = true;
+        submit.textContent = "HESAP OLUŞTURULUYOR...";
+
+        try{
+            const email = registerForm.elements["email"].value.trim();
+            const response = await fetch("/register", {
+                method:"POST",
+                body:new FormData(registerForm),
+                credentials:"same-origin",
+                headers:{"X-Requested-With":"fetch"}
+            });
+            const data = await response.json();
+
+            if(!response.ok || !data.ok){
+                setMessage(registerMessage, data.message || "Hesap oluşturulamadı.", "error");
+                if(data.refresh_captcha !== false) loadCaptcha();
+                return;
+            }
+
+            registerForm.reset();
+            setMessage(registerMessage, data.message || "Hesabın oluşturuldu.", "success");
+
+            window.setTimeout(() => {
+                openPanel("loginPanel");
+                loginForm.elements["email"].value = email;
+                loginForm.elements["password"].focus();
+                setMessage(loginMessage, "Hesabın hazır. Şifrenle giriş yapabilirsin.", "success");
+            }, 800);
+        }catch(err){
+            setMessage(registerMessage, "Sunucuya bağlanılamadı.", "error");
+        }finally{
+            submit.disabled = false;
+            submit.textContent = original;
+        }
+    });
+})();
+</script>
+{% else %}
+
+<div class="game-page fullscreen-game-page">
+    <a href="/logout" target="_top" onclick="window.top.location.replace('/logout'); return false;" class="logout-button fullscreen-logout" title="Hesaptan çıkış yap" aria-label="Hesaptan çıkış yap"><span class="logout-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M10 5H6.8A2.8 2.8 0 0 0 4 7.8v8.4A2.8 2.8 0 0 0 6.8 19H10"/><path d="M14 8l4 4-4 4"/><path d="M9 12h9"/></svg></span><span class="logout-text">ÇIKIŞ YAP</span></a>
+    <main class="game-stage fullscreen-game-stage">
+        <div id="flashContent" class="flash-content"></div>
+    </main>
+</div>
+
+{% endif %}
+
+{% if logged_in %}
+<script src="/files/swfobject.js"></script>
+<script>
+(function () {
+    function startGame() {
+        if (typeof swfobject === "undefined") {
+            console.error("SWFObject yüklenemedi.");
+            return;
+        }
+
+        const version = swfobject.getFlashPlayerVersion();
+        if (!version || version.major === 0) {
+            console.error("Flash Player algılanamadı.");
+            return;
+        }
+
+        const vars = {
+            config: "/appconfig.xml",
+            versions: "/files/versions.json?{{ update_time }}",
+            appSwf: "/files/pnz-city.swf?{{ update_time }}"
+        };
+
+        const flashVars = [];
+        for (const variable in vars) {
+            flashVars.push(variable + "=" + encodeURIComponent(vars[variable]));
+        }
+
+        const params = {
+            flashvars: flashVars.join("&"),
+            allowfullscreen: "true",
+            allowscriptaccess: "always",
+            allowFullScreenInteractive: "true",
+            allownetworking: "all",
+            wmode: "direct",
+            scale: "showall"
+        };
+
+        swfobject.embedSWF(
+            "/files/pnz-city-container.swf?{{ update_time }}",
+            "flashContent",
+            "100%",
+            "100%",
+            "10.0.0",
+            false,
+            {},
+            params,
+            { id: "flashContent", name: "flashContent" }
+        );
+    }
+
+    if (document.readyState === "loading") {
+        document.addEventListener("DOMContentLoaded", startGame, { once:true });
+    } else {
+        startGame();
+    }
+})();
+</script>
+{% endif %}
+
+
+
+<script>
+(function(){
+    const form = document.getElementById("loginForm");
+    const remember = document.getElementById("rememberMe");
+    if (!form || !remember) return;
+
+    const email = form.querySelector('input[name="email"]');
+    if (!email) return;
+
+    const key = "avatarLifeRememberedEmail";
+
+    try {
+        const saved = localStorage.getItem(key);
+        if (saved) {
+            email.value = saved;
+            remember.checked = true;
+        }
+    } catch(e) {}
+
+    function savePreference(){
+        try {
+            if (remember.checked && email.value.trim()) {
+                localStorage.setItem(key, email.value.trim());
+            } else if (!remember.checked) {
+                localStorage.removeItem(key);
+            }
+        } catch(e) {}
+    }
+
+    remember.addEventListener("change", savePreference);
+    email.addEventListener("change", savePreference);
+    form.addEventListener("submit", savePreference);
+})();
+</script>
+
+
+</body>
+</html>
+
+<!-- QUEST UI v2.1 COMPACT readability patch -->
+<style>
+/* Daha küçük, oyun ekranını daha az kaplayan görev penceresi */
+.alq-window.quest-window{
+  width:min(860px,88vw)!important;
+  max-height:84vh!important;
+  border-radius:21px!important;
+}
+.alq-banner.quest-head{
+  min-height:126px!important;
+  padding:16px 22px!important;
+  gap:15px!important;
+}
+.alq-banner-emblem{width:78px!important;height:78px!important;flex-basis:78px!important}
+.alq-emblem-star{font-size:43px!important}
+.alq-emblem-check{font-size:24px!important}
+.alq-banner #questDialogTitle{font-size:25px!important}
+.alq-kicker{font-size:9px!important;margin-bottom:3px!important}
+.alq-description{font-size:10px!important;margin-top:5px!important}
+.alq-banner-tags{margin-top:8px!important}
+.alq-banner-tags span{padding:4px 7px!important;font-size:7px!important}
+.alq-banner-art{width:145px!important;height:82px!important}
+.alq-coin{width:45px!important;height:45px!important;font-size:19px!important}
+.alq-coin.c1{right:58px!important}.alq-coin.c2{right:15px!important;top:31px!important}
+.alq-gift{right:70px!important;font-size:32px!important}
+
+/* Sekmeler daha kompakt */
+.alq-tabs.quest-tabs{padding:11px 14px 0!important;gap:8px!important}
+.alq-tabs .quest-tab{
+  height:43px!important;
+  border-radius:11px 11px 7px 7px!important;
+  font-size:10px!important;
+}
+.alq-tab-icon{font-size:13px!important;margin-right:4px!important}
+
+/* Görev listesi ve kartlar daha kompakt */
+.alq-list.quest-list{padding:11px 14px 15px!important}
+.alq-list .quest-card{
+  margin-bottom:9px!important;
+  padding:12px 14px!important;
+  border-radius:13px!important;
+}
+.alq-list .quest-progress-row{margin-top:10px!important}
+.alq-list .quest-bottom{margin-top:10px!important}
+.alq-list .quest-progress{height:11px!important}
+.alq-list .quest-claim{min-width:125px!important;height:38px!important;font-size:9px!important}
+.alq-list .quest-reward{padding:6px 8px!important;font-size:9px!important}
+
+/* Okunmayan görev yazıları: açık zeminde koyu renk */
+.alq-list .quest-name,
+.alq-list .quest-card .quest-name{
+  color:#3d321f!important;
+  font-size:14px!important;
+  font-weight:1000!important;
+  line-height:1.25!important;
+  text-shadow:0 1px 0 rgba(255,255,255,.9)!important;
+}
+.alq-list .quest-state,
+.alq-list .quest-card .quest-state{
+  color:#77684d!important;
+  font-size:9px!important;
+  font-weight:700!important;
+  margin-top:4px!important;
+  text-shadow:none!important;
+}
+.alq-list .quest-card.claimed .quest-name{color:#615844!important}
+.alq-list .quest-card.claimed .quest-state{color:#857b67!important}
+
+@media(max-width:760px){
+  .alq-window.quest-window{width:96vw!important;max-height:90vh!important}
+  .alq-banner.quest-head{min-height:105px!important;padding:13px!important}
+  .alq-banner #questDialogTitle{font-size:19px!important}
+  .alq-tabs .quest-tab{height:39px!important}
+}
+</style>

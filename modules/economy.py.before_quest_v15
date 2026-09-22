@@ -1,0 +1,35 @@
+"""Avatar Life #2017 economy settings.
+
+Quest/reward systems should import these values instead of hardcoding rewards.
+"""
+
+PUBLIC_FREE_GOLD = False
+STAFF_TEST_MIN_ROLE = 5
+
+GOLD_TO_SILVER_RATE = 100
+
+# Prepared reward economy for the next quest-system package.
+STARTER_QUEST_REWARDS = {
+    "create_avatar": {"gld": 100, "slvr": 20000},
+    "first_purchase": {"gld": 100, "slvr": 20000},
+    "first_social_action": {"gld": 100, "slvr": 20000},
+}
+
+DAILY_QUEST_REWARDS = {
+    "login": {"gld": 100, "slvr": 20000},
+    "play_time": {"gld": 200, "slvr": 40000},
+    "social": {"gld": 300, "slvr": 60000},
+    "shopping": {"gld": 400, "slvr": 80000},
+}
+
+WEEKLY_QUEST_REWARDS = {
+    "active_player": {"gld": 500, "slvr": 100000},
+    "social_player": {"gld": 600, "slvr": 120000},
+    "shopper": {"gld": 700, "slvr": 140000},
+    "weekly_complete": {"gld": 1000, "slvr": 200000},
+}
+
+# Safety ceilings for automated rewards.
+MAX_SINGLE_GOLD_REWARD = 1000
+MAX_SINGLE_SILVER_REWARD = 200000
+MAX_SINGLE_ENERGY_REWARD = 100
